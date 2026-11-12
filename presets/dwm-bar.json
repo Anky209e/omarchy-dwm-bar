@@ -1,0 +1,67 @@
+{
+  "bar": {
+    "background": "glassy",
+    "layout": {
+      "center": [],
+      "centerBegin": [],
+      "centerEnd": [],
+      "left": [
+        {
+          "id": "anky.workspaces"
+        },
+        {
+          "id": "anky.music"
+        }
+      ],
+      "right": [
+        {
+          "id": "anky.dwm-status"
+        },
+        {
+          "id": "anky.divider"
+        },
+        {
+          "id": "anky.temperature"
+        },
+        {
+          "id": "anky.divider"
+        },
+        {
+          "format": "ddd dd MMM HH:mm",
+          "formatAlt": "dd MMM yyyy",
+          "id": "omarchy.clock",
+          "showNextUp": false
+        },
+        {
+          "id": "anky.divider"
+        },
+        {
+          "id": "anky.indicators"
+        },
+        {
+          "id": "omarchy.network"
+        },
+        {
+          "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.audio"
+        },
+        {
+          "id": "omarchy.power"
+        },
+        {
+          "id": "omarchy.agents"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
+          "id": "whitewebdev.flat-tray"
+        }
+      ],
+      "tray": []
+    },
+    "position": "top"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "anky.temperature",
+  "name": "GPU Temperature",
+  "version": "1.0.0",
+  "author": "Ankit Kumar",
+  "description": "Compact independent GPU temperature widget using the Omarchy palette",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Temperature.qml"
+  },
+  "barWidget": {
+    "displayName": "GPU Temperature",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "license": "MIT"
+}

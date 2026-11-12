@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "anky.dwm-status",
+  "name": "DWM Status",
+  "version": "1.0.0",
+  "author": "Ankit Kumar",
+  "description": "Compact CPU, RAM, NVIDIA GPU and volume text blocks using the active Omarchy palette",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Status.qml"
+  },
+  "barWidget": {
+    "displayName": "DWM Status",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "anky.divider",
+  "name": "DWM Divider",
+  "version": "1.0.0",
+  "author": "Ankit Kumar",
+  "description": "Compact theme-colored separator",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Divider.qml"
+  },
+  "barWidget": {
+    "displayName": "DWM Divider",
+    "category": "Layout",
+    "allowMultiple": true,
+    "defaultSection": "right"
+  },
+  "license": "MIT"
+}

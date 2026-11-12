@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "anky.music",
+  "name": "DWM Music",
+  "version": "1.0.0",
+  "author": "Ankit Kumar",
+  "description": "Fixed-width theme-aware music controls",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Music.qml"
+  },
+  "barWidget": {
+    "displayName": "DWM Music",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  },
+  "license": "MIT"
+}

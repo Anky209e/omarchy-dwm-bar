@@ -1,0 +1,8 @@
+{
+  "cpu": "CPU %1%",
+  "ram": "RAM %1%",
+  "volume": "VOL %1",
+  "muted": "MUTE",
+  "gpu": "GPU %1%",
+  "gpuUnavailable": "GPU \u2014"
+}

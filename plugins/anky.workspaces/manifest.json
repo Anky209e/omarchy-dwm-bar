@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "anky.workspaces",
+  "name": "DWM Workspaces",
+  "version": "1.0.0",
+  "author": "Ankit Kumar",
+  "description": "Workspace number indicators",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "DWM Workspaces",
+    "description": "Workspace number indicators",
+    "category": "Compositor",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.workspaces"
+  },
+  "license": "MIT"
+}
