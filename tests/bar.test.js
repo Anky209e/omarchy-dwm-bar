@@ -23,7 +23,7 @@ for (const previous of [
   const before = JSON.stringify(previous);
   const context = {
     position: 'bottom', barConfig: previous, glassy: false, glassSyncedLook: '',
-    barConfigSerial: 0, layoutConfig: null,
+    barConfigSerial: 0, layoutConfig: null, configuredExtras: [],
     normalizeLayout: value => value,
     setRequestedTransparency(value) { this.requestedTransparent = value; },
     Util: {execDetached() {}}
@@ -84,3 +84,15 @@ const settingsPanel=fs.readFileSync(path.join(repo,'ui/Settings.qml'),'utf8');
 assert(!settingsPanel.includes('gameClasses'));
 assert(settingsPanel.includes('key:"gameMode"'));
 console.log('Manual game-mode and consistent icon regressions passed.');
+
+const layouts=require('../services/LayoutModel.js');
+const registered={'omarchy.agents':{component:{}},'crmne.hyprmoncfg':{component:{}},'omarchy.clock':{component:{}},'dwm.settings':{component:{}}};
+const configured={centerEnd:[{id:'omarchy.agents',custom:'keep'}],right:[{id:'crmne.hyprmoncfg',profile:'desk'},{id:'omarchy.agents'},{id:'omarchy.clock'},{id:'missing.plugin'},{id:'dwm.settings'}]};
+const beforeConfigured=JSON.stringify(configured);
+const extras=layouts.configuredExtras(configured,registered);
+assert.deepEqual(extras,[{id:'omarchy.agents',custom:'keep'},{id:'crmne.hyprmoncfg',profile:'desk'}]);
+assert.equal(JSON.stringify(configured),beforeConfigured);
+assert.deepEqual(layouts.configuredExtras({left:['omarchy.agents'],tray:['omarchy.agents']},registered),[{id:'omarchy.agents'}]);
+assert.deepEqual(layouts.configuredExtras(configured,{}),[]);
+assert.deepEqual(layouts.configuredExtras(null,registered),[]);
+console.log('Add-on layout regression passed: Agents and monitor widgets survive, settings stay intact, and duplicates/core/missing widgets are skipped.');

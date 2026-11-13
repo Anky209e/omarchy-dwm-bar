@@ -10,7 +10,7 @@ DEFAULTS = {
     'gameMode': False, 'sleepAware': True, 'visualizer': True,
     'remoteArtwork': False, 'showCpu': True, 'showRam': True, 'showGpu': True,
     'showVolume': True, 'showTemperature': True, 'showIndicators': True,
-    'showTray': True, 'showConnections': True, 'showMusic': True,
+    'showTray': True, 'showConnections': True, 'showMusic': True, 'showPlugins': True,
     'monitorDefault': 'full', 'monitors': {},
 }
 RANGES = {'fastInterval': (1, 30), 'gpuInterval': (2, 120), 'cpuWarn': (1, 100),

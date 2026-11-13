@@ -134,7 +134,7 @@ BarWidget {
                 columns: 3
                 spacing: Style.space(6)
                 Repeater {
-                  model: [{key:"showCpu",label:"CPU"},{key:"showRam",label:"RAM"},{key:"showGpu",label:"GPU"},{key:"showVolume",label:"VOL"},{key:"showTemperature",label:"TEMP"},{key:"showMusic",label:strings.t("music")},{key:"showIndicators",label:strings.t("indicators")},{key:"showConnections",label:strings.t("connections")},{key:"showTray",label:strings.t("tray")}]
+                  model: [{key:"showCpu",label:"CPU"},{key:"showRam",label:"RAM"},{key:"showGpu",label:"GPU"},{key:"showVolume",label:"VOL"},{key:"showTemperature",label:"TEMP"},{key:"showMusic",label:strings.t("music")},{key:"showIndicators",label:strings.t("indicators")},{key:"showConnections",label:strings.t("connections")},{key:"showPlugins",label:strings.t("plugins")},{key:"showTray",label:strings.t("tray")}]
                   Button {
                     required property var modelData
                     width: (parent.width - Style.space(12)) / 3

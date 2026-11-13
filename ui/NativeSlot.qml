@@ -9,7 +9,7 @@ BarWidget {
   property string role:"connections"
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen ? root.QsWindow.window.screen.name:""
   readonly property string mode:telemetry?telemetry.modeFor(monitorName):"full"
-  visible:mode==="full" && (role==="clock" || !telemetry || telemetry.settings.showConnections)
+  visible:mode==="full" && (role==="clock" || !telemetry || (role==="plugins" ? telemetry.settings.showPlugins : telemetry.settings.showConnections))
   implicitWidth:content.item && content.item.visible ? content.item.implicitWidth:0
   implicitHeight:barSize
   readonly property bool opened:!!content.item && content.item.opened===true

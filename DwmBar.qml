@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.Commons
 import "services" as Services
+import "services/LayoutModel.js" as LayoutModel
 import "ui" as Ui
 import "file:/usr/share/omarchy/shell/plugins/bar" as OmarchyBar
 import "file:/usr/share/omarchy/shell/plugins/bar/BarModel.js" as NativeBarModel
@@ -39,6 +40,9 @@ OmarchyBar.Bar {
   Component { id: audio; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.audio") } }
   Component { id: power; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.power") } }
   Component { id: keyboard; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.keyboard-layout") } }
+  Component { id: pluginWidget; Ui.NativeSlot { telemetry: sharedTelemetry; role:"plugins"; sourceComponent: root.nativeComponent(moduleName) } }
+  readonly property var configuredExtras: LayoutModel.configuredExtras(barConfig.layout, inheritedRegistry ? inheritedRegistry.widgets : {})
+  onConfiguredExtrasChanged: applyBarConfig()
   readonly property var nativeComponents: ({"omarchy.clock":clock,"omarchy.network":network,"omarchy.bluetooth":bluetooth,"omarchy.audio":audio,"omarchy.power":power,"omarchy.keyboard-layout":keyboard})
   function nativeComponent(name) { return inheritedRegistry && inheritedRegistry.widgets[name] ? inheritedRegistry.widgets[name].component : null }
   function thicknessFor(screen) {
@@ -87,6 +91,10 @@ OmarchyBar.Bar {
       for (var nativeName in root.nativeComponents) {
         if(nativeWidgets[nativeName])result[nativeName]={component:root.nativeComponents[nativeName],metadata:nativeWidgets[nativeName].metadata}
       }
+      for (var i = 0; i < root.configuredExtras.length; i++) {
+        var pluginId = root.configuredExtras[i].id
+        if(nativeWidgets[pluginId])result[pluginId] = {component:pluginWidget,metadata:nativeWidgets[pluginId].metadata}
+      }
       for (var localName in root.internalComponents)
         result[localName] = {component: root.internalComponents[localName], metadata: {firstParty: false}}
       return result
@@ -124,8 +132,8 @@ OmarchyBar.Bar {
         {id: "dwm.divider"}, {id: "dwm.indicators"},
         {id: "omarchy.network"}, {id: "omarchy.bluetooth"},
         {id: "omarchy.audio"}, {id: "omarchy.power"},
-        {id: "omarchy.keyboard-layout"}, {id: "dwm.tray"}, {id:"dwm.settings"}
-      ]
+        {id: "omarchy.keyboard-layout"}
+      ].concat(configuredExtras, [{id:"dwm.tray"}, {id:"dwm.settings"}])
     })
     barConfigSerial++
   }

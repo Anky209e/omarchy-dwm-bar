@@ -38,9 +38,10 @@ RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | idle/night/recording/DND | con
 - Tight CPU, RAM, GPU and volume text blocks, plus an independent temperature block.
 - Fixed-order corner controls. Nothing expands on hover.
 - Native Omarchy calendar, network, Bluetooth, audio, power and keyboard controls.
+- Registered add-on widgets from your saved Omarchy bar layout, including Agents and optional monitor configuration, appear in the corner group. Settings → Widgets → Plugins controls this group.
 - The flat tray implementation is included under its MIT license; a separate Flat Tray plugin is unnecessary. Its icons appear when applications register tray items. Keyboard layout follows Omarchy's normal visibility rules.
 
-The bar always sits at the top. It respects the current background setting: `omarchy bar background opaque`, `glassy`, or `none`. The layout itself is defined in `DwmBar.qml`; dragging or changing the old stock bar's widget list does not change this bundled layout.
+The bar always sits at the top. It respects the current background setting: `omarchy bar background opaque`, `glassy`, or `none`. The core layout is defined in `DwmBar.qml`. Additional registered widgets enabled in `bar.layout` are collected into the corner group, with duplicates removed and their settings preserved. For example, `omarchy bar put omarchy.agents --section right` adds Agents; optional plugins must already be installed. Moving an add-on between saved sections does not relocate the fixed DWM core.
 
 ## Controls
 

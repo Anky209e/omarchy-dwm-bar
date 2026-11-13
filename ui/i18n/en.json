@@ -40,5 +40,7 @@
   "help.showTray": "Show application tray icons.",
   "help.mode.full": "Show all enabled widgets on this display.",
   "help.mode.minimal": "Show only workspace tags, music and settings on this display.",
-  "help.mode.hidden": "Hide this display\u2019s bar and release its reserved screen space."
+  "help.mode.hidden": "Hide this display\u2019s bar and release its reserved screen space.",
+  "plugins": "Plugins",
+  "help.showPlugins": "Show configured plugin widgets such as Agents and monitor configuration in the corner group."
 }

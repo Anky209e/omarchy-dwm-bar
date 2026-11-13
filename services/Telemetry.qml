@@ -9,7 +9,7 @@ import "TelemetryModel.js" as Model
 Item {
   id: root
   property var shell: null
-  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,monitorDefault:"full",monitors:{}})
+  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{}})
   property var hardware: ({total:0,idle:0,cpu:-1,ram:-1})
   property var gpu: ({available:false,gpu:-1,temperature:-1})
   property string fastState: "loading"
