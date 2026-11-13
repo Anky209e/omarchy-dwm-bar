@@ -116,7 +116,7 @@ class Worker:
         command = message.get('command')
         if command == 'pause':
             was = self.paused
-            self.paused = message.get('paused') is True
+            self.paused = self.settings['gameMode'] or message.get('paused') is True
             if self.paused: self.visualizer(False)
             if was and not self.paused: self.next_fast = self.next_gpu = time.monotonic()
         elif command == 'refresh':
@@ -126,8 +126,13 @@ class Worker:
             if isinstance(patch, dict):
                 candidate = normalize(dict(load(), **patch))
                 try:
-                    save(candidate); self.settings = candidate; self.send_settings()
-                    if not self.settings['visualizer']: self.visualizer(False)
+                    save(candidate)
+                    was_paused = self.paused
+                    self.settings = candidate
+                    self.paused = self.settings['gameMode']
+                    if self.paused or not self.settings['visualizer']: self.visualizer(False)
+                    if was_paused and not self.paused: self.next_fast = self.next_gpu = time.monotonic()
+                    self.send_settings()
                 except OSError: emit('settingsError')
         elif command == 'reload':
             self.settings = load(); self.send_settings()

@@ -1,4 +1,4 @@
-"""Bounded local hardware reads and event-triggered fullscreen game detection."""
+"""Bounded local CPU, memory and GPU reads."""
 import json
 from pathlib import Path
 import re
@@ -51,58 +51,6 @@ def parse_gpu(raw):
     return {'available': True, 'gpu': load, 'temperature': temperature} if load <= 100 and temperature <= 150 else {'available': False}
 
 
-def read_environment(pid):
-    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
-        return b''
-    try:
-        with (Path('/proc') / str(pid) / 'environ').open('rb') as stream:
-            return stream.read(65536)
-    except OSError:
-        return b''
-
-
-def is_game(client, extra_classes=(), environment=read_environment):
-    names = {str(client.get(key, '')).casefold() for key in ('class', 'initialClass')}
-    known = {'gamescope', 'cs2', 'dota2', 'hl2', 'hl_linux', 'retroarch', 'org.libretro.retroarch'}
-    extra = {item.casefold() for item in extra_classes[:64] if isinstance(item, str) and 0 < len(item) <= 128}
-    if names & (known | extra) or any(re.fullmatch(r'steam_app_[1-9]\d*', name) for name in names):
-        return True
-    # Check only Steam identifiers. Never return or log process environments.
-    return any(re.fullmatch(rb'(SteamAppId|SteamGameId)=[1-9]\d*', entry) for entry in environment(client.get('pid')).split(b'\0'))
-
-
-def detect_games(clients, monitors, extra_classes=(), environment=read_environment):
-    visible = set()
-    for monitor in monitors[:32]:
-        if not isinstance(monitor, dict):
-            continue
-        for key in ('activeWorkspace', 'specialWorkspace'):
-            workspace = monitor.get(key, {})
-            if isinstance(workspace, dict) and isinstance(workspace.get('id'), int) and workspace['id'] != 0:
-                visible.add(workspace['id'])
-    count = 0
-    for client in clients[:1024]:
-        if not isinstance(client, dict):
-            continue
-        fullscreen = client.get('fullscreen', 0)
-        workspace = client.get('workspace', {})
-        if not isinstance(fullscreen, int) or not fullscreen & 2 or not isinstance(workspace, dict) or workspace.get('id') not in visible:
-            continue
-        if client.get('mapped') is False or client.get('hidden') is True:
-            continue
-        if is_game(client, extra_classes, environment):
-            count += 1
-    return {'gaming': count > 0, 'games': count}
-
-
-def gaming(options):
-    clients = json.loads(query(['hyprctl', '-j', 'clients']) or '[]')
-    monitors = json.loads(query(['hyprctl', '-j', 'monitors']) or '[]')
-    if not isinstance(clients, list) or not isinstance(monitors, list):
-        return {'gaming': False, 'games': 0}
-    classes = options.get('classes', []) if isinstance(options, dict) else []
-    return detect_games(clients, monitors, classes if isinstance(classes, list) else [])
-
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'hardware'
@@ -111,8 +59,6 @@ def main():
             result = hardware(mode == 'snapshot')
         elif mode == 'gpu':
             result = parse_gpu(query(['nvidia-smi', '--query-gpu=utilization.gpu,temperature.gpu', '--format=csv,noheader,nounits', '-i', '0']))
-        elif mode == 'gaming':
-            result = gaming(json.loads(sys.argv[2][:16384]) if len(sys.argv) > 2 else {})
         else:
             raise ValueError('Unknown mode')
         print(json.dumps(result))

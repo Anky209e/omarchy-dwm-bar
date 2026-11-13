@@ -7,11 +7,11 @@ import tempfile
 DEFAULTS = {
     'fastInterval': 2, 'gpuInterval': 5, 'cpuWarn': 90, 'ramWarn': 90,
     'gpuWarn': 95, 'tempWarm': 75, 'tempHot': 85, 'musicWidth': 240,
-    'gamingEfficiency': True, 'sleepAware': True, 'visualizer': True,
+    'gameMode': False, 'sleepAware': True, 'visualizer': True,
     'remoteArtwork': False, 'showCpu': True, 'showRam': True, 'showGpu': True,
     'showVolume': True, 'showTemperature': True, 'showIndicators': True,
     'showTray': True, 'showConnections': True, 'showMusic': True,
-    'monitorDefault': 'full', 'monitors': {}, 'gameClasses': [],
+    'monitorDefault': 'full', 'monitors': {},
 }
 RANGES = {'fastInterval': (1, 30), 'gpuInterval': (2, 120), 'cpuWarn': (1, 100),
           'ramWarn': (1, 100), 'gpuWarn': (1, 100), 'tempWarm': (30, 110),
@@ -20,7 +20,7 @@ MODES = ('full', 'minimal', 'hidden')
 
 
 def normalize(raw):
-    result = dict(DEFAULTS, monitors={}, gameClasses=[])
+    result = dict(DEFAULTS, monitors={})
     if not isinstance(raw, dict):
         return result
     for key, default in DEFAULTS.items():
@@ -37,8 +37,6 @@ def normalize(raw):
             result[key] = {name: mode for name, mode in list(value.items())[:32]
                            if isinstance(name, str) and 0 < len(name) <= 128
                            and name not in ('__proto__', 'constructor', 'prototype') and mode in MODES}
-        elif key == 'gameClasses' and isinstance(value, list):
-            result[key] = [item for item in value[:64] if isinstance(item, str) and 0 < len(item) <= 128]
     result['tempHot'] = max(result['tempWarm'], result['tempHot'])
     return result
 

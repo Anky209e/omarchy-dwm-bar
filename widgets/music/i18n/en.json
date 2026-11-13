@@ -8,7 +8,13 @@
   "players": "Players",
   "player": "Music player",
   "visualizer": "Visualizer",
-  "artwork": "Remote covers",
+  "artwork": "Cover art",
   "artBlocked": "Cover unavailable or remote covers disabled.",
-  "vizUnavailable": "Audio visualizer unavailable"
+  "vizUnavailable": "Audio visualizer unavailable",
+  "nowPlaying": "Now playing",
+  "close": "Close",
+  "previous": "Previous",
+  "next": "Next",
+  "play": "Play",
+  "pause": "Pause"
 }

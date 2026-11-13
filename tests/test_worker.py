@@ -20,12 +20,14 @@ import worker
 
 class PreferencesTests(unittest.TestCase):
     def test_bounds_and_types(self):
-        values = preferences.normalize({'fastInterval': 0, 'gpuInterval': 500, 'remoteArtwork': '<img src=x>', 'cpuWarn': True, 'gameClasses': ['A', 123], 'monitors': {'eDP-1': 'minimal', '__proto__': 'hidden', 'bad': 'evil'}})
+        values = preferences.normalize({'fastInterval': 0, 'gpuInterval': 500, 'remoteArtwork': '<img src=x>', 'cpuWarn': True, 'gameMode': '<img src=x>', 'gamingEfficiency':True, 'gameClasses':['A'], 'monitors': {'eDP-1': 'minimal', '__proto__': 'hidden', 'bad': 'evil'}})
         self.assertEqual(values['fastInterval'], 2)
         self.assertEqual(values['gpuInterval'], 5)
         self.assertFalse(values['remoteArtwork'])
         self.assertEqual(values['cpuWarn'], 90)
-        self.assertEqual(values['gameClasses'], ['A'])
+        self.assertFalse(values['gameMode'])
+        self.assertNotIn('gamingEfficiency', values)
+        self.assertNotIn('gameClasses', values)
         self.assertEqual(values['monitors'], {'eDP-1': 'minimal'})
         self.assertGreaterEqual(preferences.normalize({'tempWarm': 100, 'tempHot': 50})['tempHot'], 100)
 
@@ -138,6 +140,10 @@ class PersistentWorkerTests(unittest.TestCase):
                 pid=process.pid
                 command(command='settings',patch={'gpuInterval':9,'remoteArtwork':False})
                 self.assertEqual(event('settings')['values']['gpuInterval'],9)
+                command(command='settings',patch={'gameMode':True})
+                event('spectrum')
+                self.assertTrue(event('settings')['values']['gameMode'])
+                self.assertTrue(json.loads((Path(directory)/'omarchy/dwm-bar.json').read_text())['gameMode'])
                 command(command='refresh')
                 self.assertEqual(event('hardware')['status'],'ok')
                 event('gpu')
@@ -145,6 +151,8 @@ class PersistentWorkerTests(unittest.TestCase):
                 self.assertEqual(event('spectrum')['status'],'off')
                 command(command='visualizer',enabled=False)
                 self.assertEqual(event('spectrum')['bars'],[0]*16)
+                command(command='settings',patch={'gameMode':False})
+                self.assertFalse(event('settings')['values']['gameMode'])
                 self.assertEqual(process.pid,pid)
                 process.stdin.close();process.wait(timeout=5)
                 self.assertEqual(process.returncode,0)

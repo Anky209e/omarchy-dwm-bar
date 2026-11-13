@@ -65,7 +65,7 @@ There is no window-title widget, DEV shortcut or focus timer.
 
 ## Settings and monitor layouts
 
-Click the gear at the right edge, or run `omarchy-shell dwm.bar.ui settings`. The theme-native panel controls polling intervals, warning temperatures and percentages, music width, visible widgets, gaming efficiency, GPU sleep awareness, artwork and visualization. Extra game classes can be entered as a comma-separated list.
+Click the gear at the right edge, or run `omarchy-shell dwm.bar.ui settings`. The theme-native panel is organized into General, Widgets and Displays tabs. General groups short two-column toggles, polling/size controls and warning thresholds. Game mode is manual-only; there are no game-class rules or automatic detection.
 
 Preferences are validated and saved atomically in `~/.config/omarchy/dwm-bar.json` (under `XDG_CONFIG_HOME` when set). The prior file is retained as `dwm-bar.json.bak`. Invalid values fall back to safe defaults; a failed save is shown in the panel. No manual configuration is required.
 
@@ -81,7 +81,9 @@ The default is Full on every display. Display choices persist by output name. If
 
 Click music to open the album/track artwork, title, artist and album, seekable progress, previous/play/next, shuffle, repeat and player selection. Unsupported player controls are disabled. Unknown track lengths do not show a false seek range. Switching players is shared across displays. Artwork and spectrum data are also shared, so opening a second panel does not start a second visualizer.
 
-The small visualizer uses **real system-output audio from cava**, not random animation. It starts only while a music panel is open, the selected player is playing and visualization is enabled. It stops when the panel closes, playback pauses, or gaming efficiency pauses the hardware work. `cava` is optional; when unavailable, the panel says so and playback controls still work.
+The music panel uses Nerd Font icons throughout, with a centered shuffle/previous/play/next/repeat row, a separate source selector, and an evenly sized Visualizer/Cover art option row.
+
+The small visualizer uses **real system-output audio from cava**, not random animation. It starts only while a music panel is open, the selected player is playing and visualization is enabled. It stops when the panel closes, playback pauses, or Game mode pauses the hardware work. `cava` is optional; when unavailable, the panel says so and playback controls still work.
 
 Player-provided local PNG/JPEG covers work without network access. Remote covers are opt-in using the Remote covers control. Supported HTTPS hosts are `i.scdn.co`, `mosaic.scdn.co`, `i.ytimg.com`, `img.youtube.com`, `lastfm.freetls.fastly.net`, `cdn-images.dzcdn.net`, `resources.tidal.com` and `lh3.googleusercontent.com`. Cover loading happens only while a music panel is open. Redirects stay on that allowlist; downloads are limited to 2 MiB, validated image dimensions to 4096×4096, and the local cache to 32 images. SVG, arbitrary hosts, HTTP, credentials in URLs and oversized responses are rejected. The QML image receives only validated local cache files.
 
@@ -105,7 +107,7 @@ Requires Omarchy's Quickshell shell and plugin CLI, including the full-bar API, 
 
 Python 3, `awk`, GNU `timeout`, `wpctl` and a Nerd Font are normally provided by Omarchy. `btop` and `nvtop` are needed for monitoring shortcuts. Music uses MPRIS; without a compatible player the slot says “No music.” NVIDIA GPU index `0` is read through `nvidia-smi`; Intel/AMD GPU sensors are not implemented. Unsupported or missing readings display `—` and retain their space.
 
-One persistent Python worker serves every monitor. CPU and RAM are read directly from `/proc` inside that process, rather than launching Python or `awk` every interval. GPU utilization and temperature share one bounded `nvidia-smi` call. Volume follows PipeWire events; idle, night light and DND follow Omarchy service events. Screen-recording status retains one shared five-second check. Additional monitors do not add polling processes. Game detection is event-triggered rather than periodic.
+One persistent Python worker serves every monitor. CPU and RAM are read directly from `/proc` inside that process, rather than launching Python or `awk` every interval. GPU utilization and temperature share one bounded `nvidia-smi` call. Volume follows PipeWire events; idle, night light and DND follow Omarchy service events. Screen-recording status retains one shared five-second check. Additional monitors do not add polling processes. There are no game-detection probes or process-environment scans.
 
 ### GPU sleep and sensor health
 
@@ -125,15 +127,13 @@ Fixed-width slots distinguish these states:
 
 Tooltips explain the state and retry action. Errors use the theme warning color; sleeping, paused and unavailable readings use the muted palette. Old values are never presented as live after a failed read. The worker restarts on failure, and normal telemetry intervals remain configurable in settings.
 
-## Gaming efficiency
+## Manual Game mode
 
-When a recognized game is in real fullscreen on a visible workspace on either monitor, automatic CPU/RAM and GPU/temperature polling pauses. Existing hardware values remain in their fixed slots, shown in the theme's muted color. Music, volume, date/time, recording controls and tray interaction continue normally. This changes bar telemetry only: it does not alter power profiles, notifications, idle locking, game settings or system performance governors.
+Use **Game mode** in Settings → General to pause automatic CPU/RAM and GPU/temperature polling and stop the music visualizer. The switch is saved and remains exactly as you set it across shell restarts. Turning it off resumes normal polling with a fresh CPU baseline. No window class, fullscreen state or running process automatically changes it.
 
-Fullscreen changes, workspace changes and window/monitor lifecycle events trigger a debounced detection probe; there is no periodic game-detection poll. Steam game window classes and positive `SteamAppId`/`SteamGameId` process metadata are recognized, along with a small list of known native game classes. Only those Steam identifiers are read from a bounded environment buffer; environments are never returned or logged. A fullscreen browser, maximized window, or game on an invisible workspace does not trigger the policy.
+Existing hardware values stay in fixed slots and use the muted theme color while paused. Music playback, volume, date/time, recording controls and tray interaction remain available. Right-click CPU, RAM, GPU or TEMP for a one-time sample without turning Game mode off; GPU sleep protection still applies.
 
-Right-click CPU, RAM, GPU or TEMP to take a fresh hardware snapshot even while automatic polling is paused. The CPU snapshot samples a short interval; resuming normal polling resets its baseline so an entire gaming session is not averaged into the next reading. Polling resumes after leaving fullscreen, switching away from all fullscreen games, or closing the game.
-
-For games not detected automatically, enter exact window classes in the settings panel. Matching is case-insensitive and exact. Disable gaming efficiency there to keep polling active during games. Preferences now belong to `dwm-bar.json`, rather than the old experimental `bar.gamingEfficiency` and `bar.gameClasses` fields in `shell.json`.
+The preference is `gameMode` in `dwm-bar.json`. The former `gamingEfficiency` and `gameClasses` preferences are retired and removed when settings are saved. There are no compositor event hooks or game-detection subprocesses.
 
 To inspect the shared reader or request a manual sample from the terminal:
 
@@ -157,7 +157,7 @@ python scripts/check.py
 python scripts/check.py --runtime
 ```
 
-The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings, registry reinjection, GPU sleep without device access, settings validation/backups, artwork limits and allowlists, persistent-worker lifecycle and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
+The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music and consistent Nerd Font controls, complete runtime layout, preservation of prior settings, registry reinjection, GPU sleep without device access, settings validation/backups, artwork limits and allowlists, persistent-worker lifecycle and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
 
 ## License
 
