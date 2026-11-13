@@ -16,5 +16,7 @@
   "previous": "Previous",
   "next": "Next",
   "play": "Play",
-  "pause": "Pause"
+  "pause": "Pause",
+  "visualizerHelp": "Show a live audio spectrum while the music panel is open and music is playing.",
+  "artworkHelp": "Load covers from supported HTTPS artwork hosts. Local covers work without this."
 }

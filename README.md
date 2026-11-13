@@ -65,7 +65,7 @@ There is no window-title widget, DEV shortcut or focus timer.
 
 ## Settings and monitor layouts
 
-Click the gear at the right edge, or run `omarchy-shell dwm.bar.ui settings`. The theme-native panel is organized into General, Widgets and Displays tabs. General groups short two-column toggles, polling/size controls and warning thresholds. Game mode is manual-only; there are no game-class rules or automatic detection.
+Click the gear at the right edge, or run `omarchy-shell dwm.bar.ui settings`. The theme-native panel is organized into General, Widgets and Displays tabs. General groups Game mode and GPU sleep toggles, polling/size controls and warning thresholds. Hover a toggle for its description. Visualizer and Cover art controls live only in the music panel. Game mode is manual-only; there are no game-class rules or automatic detection.
 
 Preferences are validated and saved atomically in `~/.config/omarchy/dwm-bar.json` (under `XDG_CONFIG_HOME` when set). The prior file is retained as `dwm-bar.json.bak`. Invalid values fall back to safe defaults; a failed save is shown in the panel. No manual configuration is required.
 
@@ -157,7 +157,7 @@ python scripts/check.py
 python scripts/check.py --runtime
 ```
 
-The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music and consistent Nerd Font controls, complete runtime layout, preservation of prior settings, registry reinjection, GPU sleep without device access, settings validation/backups, artwork limits and allowlists, persistent-worker lifecycle and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
+The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music and consistent Nerd Font controls, complete runtime layout, preservation of prior settings, registry reinjection, GPU sleep without device access, settings validation/backups, artwork limits and allowlists, persistent-worker lifecycle and manual Game mode. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
 
 ## License
 

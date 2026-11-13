@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "anky.dwm-bar",
   "name": "DWM Bar",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "author": "Ankit Kumar",
   "license": "MIT",
   "description": "Complete theme-aware dwm-style bar with music, metrics, state controls and a flat tray in one plugin",

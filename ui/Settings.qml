@@ -85,17 +85,24 @@ BarWidget {
                 columns: 2
                 spacing: Style.space(8)
                 Repeater {
-                  model: [{key:"gameMode",label:strings.t("gaming")},{key:"sleepAware",label:strings.t("sleep")},{key:"visualizer",label:strings.t("visualizer")},{key:"remoteArtwork",label:strings.t("remoteArt")}]
+                  model: [{key:"gameMode",label:strings.t("gaming")},{key:"sleepAware",label:strings.t("sleep")}]
                   Toggle {
+                    id: preferenceToggle
                     required property var modelData
+                    property bool helpHovered: false
                     width: (parent.width - Style.space(8)) / 2
                     label: modelData.label
                     checked: root.telemetry ? root.telemetry.settings[modelData.key] : false
                     onClicked: root.toggle(modelData.key)
+                    onHovered: function(value) { helpHovered = value }
+                    PanelToolTip {
+                      visible: root.opened && preferenceToggle.helpHovered
+                      text: strings.t("help." + preferenceToggle.modelData.key)
+                      width: Math.min(Style.space(300), implicitWidth)
+                    }
                   }
                 }
               }
-              PlainLabel { width: parent.width; wrapMode: Text.WordWrap; text: strings.t("gameHelp"); color: Commons.Color.popups.text; opacity: 0.65; font.pixelSize: Style.font.caption }
               Heading { text: strings.t("polling") }
               Row {
                 spacing: Style.space(8)
@@ -133,11 +140,11 @@ BarWidget {
                     width: (parent.width - Style.space(12)) / 3
                     text: modelData.label
                     selected: root.telemetry ? root.telemetry.settings[modelData.key] : true
+                    tooltipText: strings.t("help." + modelData.key)
                     onClicked: root.toggle(modelData.key)
                   }
                 }
               }
-              PlainLabel { width: parent.width; wrapMode: Text.WordWrap; text: strings.t("artHelp"); color: Commons.Color.popups.text; opacity: 0.65; font.pixelSize: Style.font.caption }
             }
             Column {
               visible: root.page === 2
@@ -161,6 +168,7 @@ BarWidget {
                         width: (parent.width - Style.space(12)) / 3
                         text: modelData.label
                         selected: root.telemetry && root.telemetry.modeFor(output) === modelData.value
+                        tooltipText: strings.t("help.mode." + modelData.value)
                         onClicked: root.telemetry.setMonitor(output,modelData.value)
                       }
                     }

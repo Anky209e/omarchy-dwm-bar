@@ -180,6 +180,7 @@ BarWidget {
           width:(parent.width-Style.space(8))/2
           iconText:"󰺢"
           text:strings.t("visualizer")
+          tooltipText:strings.t("visualizerHelp")
           selected:root.telemetry && root.telemetry.settings.visualizer
           onClicked:root.telemetry.save({visualizer:!root.telemetry.settings.visualizer})
         }
@@ -187,6 +188,7 @@ BarWidget {
           width:(parent.width-Style.space(8))/2
           iconText:"󰋩"
           text:strings.t("artwork")
+          tooltipText:strings.t("artworkHelp")
           selected:root.telemetry && root.telemetry.settings.remoteArtwork
           onClicked:root.telemetry.save({remoteArtwork:!root.telemetry.settings.remoteArtwork})
         }
