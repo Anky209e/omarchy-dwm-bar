@@ -1,1 +1,14 @@
-{"none": "No music", "hint": "Left click: play/pause \u00b7 Right click: next \u00b7 Middle click: previous", "track": "%1 \u2014 %2"}
+{
+  "none": "No music",
+  "hint": "Left click: music panel \u00b7 Right click: play/pause \u00b7 Middle click: next",
+  "track": "%1 \u2014 %2",
+  "shuffle": "Shuffle",
+  "repeat": "Repeat",
+  "repeatTrack": "Repeat 1",
+  "players": "Players",
+  "player": "Music player",
+  "visualizer": "Visualizer",
+  "artwork": "Remote covers",
+  "artBlocked": "Cover unavailable or remote covers disabled.",
+  "vizUnavailable": "Audio visualizer unavailable"
+}

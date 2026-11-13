@@ -11,6 +11,9 @@ BarWidget {
   id: root
   moduleName: "dwm.tray"
 
+  property QtObject telemetry:null
+  readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
+  readonly property bool allowed:!telemetry || (telemetry.modeFor(monitorName)==="full" && telemetry.settings.showTray)
   property bool expanded: false
   property bool managePopupOpen: false
   property bool trayMenuOpen: false
@@ -227,7 +230,7 @@ BarWidget {
     persistTrayState(p, h)
   }
 
-  visible: pinnedItems.length > 0 || drawerCount > 0
+  visible: allowed && (pinnedItems.length > 0 || drawerCount > 0)
   clip: false
   implicitWidth: root.vertical ? root.barSize : trayContent.implicitWidth
   implicitHeight: root.vertical ? trayContent.implicitHeight : root.barSize

@@ -29,7 +29,7 @@ if args.runtime:
     plugins = json.loads(subprocess.check_output(['omarchy', 'plugin', 'list', '--json'], text=True))
     active = next(p for p in plugins if p['id'] == 'anky.dwm-bar')
     assert active['active'], 'Single bar plugin did not become active'
-    required = {'dwm.workspaces', 'dwm.music', 'dwm.status', 'dwm.temperature', 'dwm.indicators', 'dwm.divider', 'dwm.tray', 'omarchy.clock', 'omarchy.audio', 'omarchy.network'}
+    required = {'dwm.workspaces', 'dwm.music', 'dwm.status', 'dwm.temperature', 'dwm.indicators', 'dwm.divider', 'dwm.tray', 'omarchy.clock', 'omarchy.audio', 'omarchy.network', 'dwm.settings'}
     # Plugin selection precedes asynchronous per-monitor QML incubation.
     # An immediate post-restart check must wait for the widgets to appear.
     deadline = time.monotonic() + 8

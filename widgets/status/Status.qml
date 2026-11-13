@@ -8,6 +8,16 @@ BarWidget {
   id: root
   moduleName: "dwm.status"
   property QtObject telemetry: null
+  readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
+  readonly property var prefs:telemetry?telemetry.settings:({showCpu:true,showRam:true,showGpu:true,showVolume:true,cpuWarn:90,ramWarn:90,gpuWarn:95})
+  visible:!telemetry || (telemetry.modeFor(monitorName)==="full" && (prefs.showCpu || prefs.showRam || prefs.showGpu || prefs.showVolume))
+  readonly property string fastStatus:telemetry?telemetry.hardwareStatus:"loading"
+  readonly property string gpuStatus:telemetry?telemetry.gpuStatus:"loading"
+  function valueText(key,value,status){
+    var code=status==="error"?"ERR":status==="sleep"?"SLP":status==="missing" || status==="unknown"?"N/A":status==="stale"?"…":value<0?"—":""
+    return code?strings.t("sensorState").arg(strings.t("label."+key)).arg(code):strings.t(key).arg(Commons.I18n.formatNumber(value))
+  }
+  function statusHint(status){return strings.t("state."+status)}
   readonly property int cpu: telemetry ? telemetry.hardware.cpu : -1
   readonly property int ram: telemetry ? telemetry.hardware.ram : -1
   readonly property bool gpuAvailable: !!telemetry && telemetry.gpu.available
@@ -42,30 +52,34 @@ BarWidget {
     id: blocks
     layoutDirection: Commons.I18n.rightToLeft ? Qt.RightToLeft : Qt.LeftToRight
     Block {
+      visible:root.prefs.showCpu
       reservedText: strings.t("cpu").arg(Commons.I18n.formatNumber(100))
-      text: strings.t("cpu").arg(root.cpu < 0 ? "—" : Commons.I18n.formatNumber(root.cpu))
-      foreground: root.hardwarePaused ? themePalette.muted : root.cpu >= 90 ? themePalette.red : themePalette.green
-      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      text: root.valueText("cpu",root.cpu,root.fastStatus)
+      foreground: root.fastStatus==="error" ? themePalette.red : root.fastStatus!=="ok" ? themePalette.muted : root.cpu >= root.prefs.cpuWarn ? themePalette.red : themePalette.green
+      tooltipText: root.statusHint(root.fastStatus)
       onPressed: function(button) { root.monitor(button, "btop") }
     }
-    Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
+    Block { visible:root.prefs.showCpu && (root.prefs.showRam || root.prefs.showGpu || root.prefs.showVolume); text:"|";interactive:false;fixedWidth:Style.space(4);horizontalMargin:0;opacity:0.3 }
     Block {
+      visible:root.prefs.showRam
       reservedText: strings.t("ram").arg(Commons.I18n.formatNumber(100))
-      text: strings.t("ram").arg(root.ram < 0 ? "—" : Commons.I18n.formatNumber(root.ram))
-      foreground: root.hardwarePaused ? themePalette.muted : root.ram >= 90 ? themePalette.red : themePalette.blue
-      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      text: root.valueText("ram",root.ram,root.fastStatus)
+      foreground: root.fastStatus==="error" ? themePalette.red : root.fastStatus!=="ok" ? themePalette.muted : root.ram >= root.prefs.ramWarn ? themePalette.red : themePalette.blue
+      tooltipText: root.statusHint(root.fastStatus)
       onPressed: function(button) { root.monitor(button, "btop") }
     }
-    Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
+    Block { visible:root.prefs.showRam && (root.prefs.showGpu || root.prefs.showVolume); text:"|";interactive:false;fixedWidth:Style.space(4);horizontalMargin:0;opacity:0.3 }
     Block {
+      visible:root.prefs.showGpu
       reservedText: strings.t("gpu").arg(Commons.I18n.formatNumber(100))
-      text: root.gpuAvailable ? strings.t("gpu").arg(Commons.I18n.formatNumber(root.gpu)) : strings.t("gpuUnavailable")
-      foreground: root.hardwarePaused || !root.gpuAvailable ? themePalette.muted : root.gpu >= 95 ? themePalette.yellow : themePalette.magenta
-      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      text: root.valueText("gpu",root.gpu,root.gpuStatus)
+      foreground: root.gpuStatus==="error" ? themePalette.red : root.gpuStatus!=="ok" || !root.gpuAvailable ? themePalette.muted : root.gpu >= root.prefs.gpuWarn ? themePalette.yellow : themePalette.magenta
+      tooltipText: root.statusHint(root.gpuStatus)
       onPressed: function(button) { root.monitor(button, "nvtop") }
     }
-    Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
+    Block { visible:root.prefs.showGpu && root.prefs.showVolume; text:"|";interactive:false;fixedWidth:Style.space(4);horizontalMargin:0;opacity:0.3 }
     Block {
+      visible:root.prefs.showVolume
       reservedText: strings.t("volume").arg("100%")
       text: strings.t("volume").arg(root.muted ? strings.t("muted") : root.volume)
       foreground: root.muted ? themePalette.muted : themePalette.cyan

@@ -2,5 +2,14 @@
   "temperature": "TEMP %1\u00b0C",
   "unavailable": "TEMP \u2014",
   "hint": "GPU temperature \u00b7 Left click: nvtop \u00b7 Right click: refresh hardware",
-  "paused": "Hardware polling paused for fullscreen gaming \u00b7 Right click: refresh once"
+  "paused": "Hardware polling paused for fullscreen gaming \u00b7 Right click: refresh once",
+  "state.ok": "Live reading \u00b7 Right click: refresh hardware",
+  "state.paused": "Paused for fullscreen gaming \u00b7 Right click: sample once",
+  "state.sleep": "GPU asleep; polling skipped to avoid waking it",
+  "state.missing": "No supported NVIDIA GPU detected",
+  "state.error": "Sensor or driver read failed \u00b7 Right click: retry",
+  "state.stale": "Reading is stale \u00b7 Right click: retry",
+  "state.loading": "Waiting for the first reading",
+  "state.unknown": "GPU power state unavailable; query skipped to avoid waking it",
+  "stateValue": "TEMP %1"
 }

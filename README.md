@@ -29,7 +29,7 @@ The original `bar.layout`, idle settings and unrelated plugins remain in `shell.
 
 ```text
 LEFT   workspaces → layout symbol → music
-RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | idle/night/recording/DND | connections | tray
+RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | idle/night/recording/DND | connections | tray | settings
 ```
 
 - Numbered workspace tags with a solid active-tag highlight and occupied markers.
@@ -48,7 +48,7 @@ The bar always sits at the top. It respects the current background setting: `oma
 | --- | --- |
 | Workspace tag | Left click selects; right click opens Omarchy's menu; wheel navigates |
 | Layout symbol | Click cycles the current workspace layout |
-| Music | Left click play/pause; right click next; middle click previous |
+| Music | Left click opens the music panel; right click play/pause; middle click next |
 | CPU / RAM | Left click opens `btop`; right click refreshes hardware once |
 | GPU / temperature | Left click opens `nvtop`; right click refreshes hardware once |
 | Volume text | Left click opens audio; right click mutes; wheel adjusts by 5%, capped at 100% |
@@ -59,8 +59,31 @@ The bar always sits at the top. It respects the current background setting: `oma
 | DND | Toggle notification silencing |
 | Native connection, audio and power icons | Open their normal panels |
 | Tray | Application actions and context menus |
+| Gear | Open persistent bar settings |
 
 There is no window-title widget, DEV shortcut or focus timer.
+
+## Settings and monitor layouts
+
+Click the gear at the right edge, or run `omarchy-shell dwm.bar.ui settings`. The theme-native panel controls polling intervals, warning temperatures and percentages, music width, visible widgets, gaming efficiency, GPU sleep awareness, artwork and visualization. Extra game classes can be entered as a comma-separated list.
+
+Preferences are validated and saved atomically in `~/.config/omarchy/dwm-bar.json` (under `XDG_CONFIG_HOME` when set). The prior file is retained as `dwm-bar.json.bak`. Invalid values fall back to safe defaults; a failed save is shown in the panel. No manual configuration is required.
+
+Each connected display can use:
+
+- **Full:** all enabled widgets.
+- **Minimal:** workspace tags, music and the settings button.
+- **Hidden:** no bar widgets and no reserved screen space.
+
+The default is Full on every display. Display choices persist by output name. If all bars are hidden, reopen the panel with `omarchy-shell dwm.bar.ui settings`. Native calendar, audio and connection panels keep their standard behavior.
+
+## Music panel
+
+Click music to open the album/track artwork, title, artist and album, seekable progress, previous/play/next, shuffle, repeat and player selection. Unsupported player controls are disabled. Unknown track lengths do not show a false seek range. Switching players is shared across displays. Artwork and spectrum data are also shared, so opening a second panel does not start a second visualizer.
+
+The small visualizer uses **real system-output audio from cava**, not random animation. It starts only while a music panel is open, the selected player is playing and visualization is enabled. It stops when the panel closes, playback pauses, or gaming efficiency pauses the hardware work. `cava` is optional; when unavailable, the panel says so and playback controls still work.
+
+Player-provided local PNG/JPEG covers work without network access. Remote covers are opt-in using the Remote covers control. Supported HTTPS hosts are `i.scdn.co`, `mosaic.scdn.co`, `i.ytimg.com`, `img.youtube.com`, `lastfm.freetls.fastly.net`, `cdn-images.dzcdn.net`, `resources.tidal.com` and `lh3.googleusercontent.com`. Cover loading happens only while a music panel is open. Redirects stay on that allowlist; downloads are limited to 2 MiB, validated image dimensions to 4096×4096, and the local cache to 32 images. SVG, arbitrary hosts, HTTP, credentials in URLs and oversized responses are rejected. The QML image receives only validated local cache files.
 
 ## Theme colors
 
@@ -82,7 +105,25 @@ Requires Omarchy's Quickshell shell and plugin CLI, including the full-bar API, 
 
 Python 3, `awk`, GNU `timeout`, `wpctl` and a Nerd Font are normally provided by Omarchy. `btop` and `nvtop` are needed for monitoring shortcuts. Music uses MPRIS; without a compatible player the slot says “No music.” NVIDIA GPU index `0` is read through `nvidia-smi`; Intel/AMD GPU sensors are not implemented. Unsupported or missing readings display `—` and retain their space.
 
-One shared telemetry object serves every monitor. CPU and RAM refresh every two seconds. GPU utilization and temperature are read together in one bounded `nvidia-smi` query every five seconds. Volume follows PipeWire events; idle, night light and DND follow Omarchy service events. Only screen-recording status retains a shared five-second check. Extra monitors do not create extra polling processes. NVIDIA polling outside gaming mode may still wake a sleeping discrete GPU and consume battery power. The plugin itself makes no network requests.
+One persistent Python worker serves every monitor. CPU and RAM are read directly from `/proc` inside that process, rather than launching Python or `awk` every interval. GPU utilization and temperature share one bounded `nvidia-smi` call. Volume follows PipeWire events; idle, night light and DND follow Omarchy service events. Screen-recording status retains one shared five-second check. Additional monitors do not add polling processes. Game detection is event-triggered rather than periodic.
+
+### GPU sleep and sensor health
+
+With sleep awareness enabled, the worker checks PCI runtime-power state using sysfs before any NVIDIA query. A suspended/suspending NVIDIA graphics device is left asleep; missing or unknown power information also prevents speculative queries. This is conservative on multi-NVIDIA systems because the bar never wakes hardware just to discover GPU index mapping. Turning off sleep awareness permits explicit querying. Hardware refresh while asleep still respects this setting.
+
+Fixed-width slots distinguish these states:
+
+| Display | Meaning |
+| --- | --- |
+| Normal values | Current reading |
+| Muted retained values | Polling paused for gaming |
+| `SLP` | GPU asleep; device query skipped |
+| `N/A` | Unsupported/missing GPU or unreadable power state |
+| `ERR` | Sensor, driver or backend failed |
+| `…` | Last reading is stale |
+| `—` | Waiting for the first reading |
+
+Tooltips explain the state and retry action. Errors use the theme warning color; sleeping, paused and unavailable readings use the muted palette. Old values are never presented as live after a failed read. The worker restarts on failure, and normal telemetry intervals remain configurable in settings.
 
 ## Gaming efficiency
 
@@ -92,16 +133,7 @@ Fullscreen changes, workspace changes and window/monitor lifecycle events trigge
 
 Right-click CPU, RAM, GPU or TEMP to take a fresh hardware snapshot even while automatic polling is paused. The CPU snapshot samples a short interval; resuming normal polling resets its baseline so an entire gaming session is not averaged into the next reading. Polling resumes after leaving fullscreen, switching away from all fullscreen games, or closing the game.
 
-For games not detected automatically, add exact window classes to the existing `bar` object in `~/.config/omarchy/shell.json`:
-
-```json
-{
-  "gamingEfficiency": true,
-  "gameClasses": ["YourGameClass", "AnotherGame.exe"]
-}
-```
-
-These are fields inside `bar`, not a replacement for the whole file. Class matching is case-insensitive and exact. Set `gamingEfficiency` to `false` to keep hardware polling active during games. No additional plugin is required.
+For games not detected automatically, enter exact window classes in the settings panel. Matching is case-insensitive and exact. Disable gaming efficiency there to keep polling active during games. Preferences now belong to `dwm-bar.json`, rather than the old experimental `bar.gamingEfficiency` and `bar.gameClasses` fields in `shell.json`.
 
 To inspect the shared reader or request a manual sample from the terminal:
 
@@ -125,7 +157,7 @@ python scripts/check.py
 python scripts/check.py --runtime
 ```
 
-The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings, registry reinjection, shared-reader ownership, pause/manual/resume behavior, combined GPU parsing and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
+The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings, registry reinjection, GPU sleep without device access, settings validation/backups, artwork limits and allowlists, persistent-worker lifecycle and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
 
 ## License
 

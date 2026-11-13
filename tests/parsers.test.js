@@ -37,6 +37,6 @@ for (const plugin of ['music', 'indicators', 'temperature']) {
   assert.equal(fs.readFileSync(path.join(root, 'widgets', plugin, 'ThemePalette.qml'), 'utf8'), fs.readFileSync(path.join(root, 'widgets/status/ThemePalette.qml'), 'utf8'));
 }
 const music = fs.readFileSync(path.join(root, 'widgets/music/Music.qml'), 'utf8');
-assert(music.includes('textFormat: Text.PlainText'));
+assert(/textFormat:\s*Text\.PlainText/.test(music));
 assert(!music.match(/tooltipText:\s*root\.player/));
 console.log('Parser checks passed: shared CPU deltas, resume baseline, manual samples, combined GPU/temperature, bounded palette and markup-shaped input.');

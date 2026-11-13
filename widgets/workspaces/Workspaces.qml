@@ -9,7 +9,9 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "omarchy.workspaces"
+  moduleName: "dwm.workspaces"
+  property QtObject telemetry:null
+  visible:!telemetry || telemetry.modeFor(root.monitorName)!=="hidden"
 
   // Every monitor has workspaces 1-10 of its own, which Hyprland numbers in a
   // block of ten per monitor: 1-10, 11-20, and so on (see
