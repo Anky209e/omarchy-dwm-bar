@@ -7,7 +7,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "anky.temperature"
+  moduleName: "dwm.temperature"
   property int temperature: -1
   implicitWidth: button.implicitWidth
   implicitHeight: barSize

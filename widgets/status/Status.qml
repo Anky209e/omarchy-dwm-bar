@@ -7,7 +7,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "anky.dwm-status"
+  moduleName: "dwm.status"
   property real previousTotal: 0
   property real previousIdle: 0
   property int cpu: -1

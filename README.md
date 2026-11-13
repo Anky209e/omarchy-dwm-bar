@@ -1,118 +1,106 @@
 # Omarchy DWM Bar
 
-A compact, dwm-style top bar built on Omarchy's stock Quickshell bar. It follows the active Omarchy theme and keeps live readings in fixed-width click targets.
+One Omarchy shell plugin for the complete dwm-style top bar. Workspaces, layout switching, music, text metrics, temperature, state controls and a flat system tray are bundled together. No companion plugins, installer script, layout copying or separate tray installation.
+
+## Install
+
+```bash
+omarchy plugin install https://github.com/Anky209e/omarchy-dwm-bar.git --enable
+```
+
+`install` is Omarchy's alias for `plugin add`. `--enable` selects the bar immediately after installation. The plugin ID is **`anky.dwm-bar`**. Omarchy handles cloning, validation and enabling; its normal review/confirmation prompt still applies.
+
+To update an installed copy:
+
+```bash
+omarchy plugin update anky.dwm-bar
+```
+
+To switch between bars without removing this plugin:
+
+```bash
+omarchy bar use omarchy.bar
+omarchy bar use anky.dwm-bar
+```
+
+The original `bar.layout`, idle settings and unrelated plugins remain in `shell.json`. Enabling this plugin selects `bar.id`; the plugin supplies its own layout at runtime. To remove it, first select `omarchy.bar`, then run `omarchy plugin remove anky.dwm-bar`.
+
+## Layout
 
 ```text
-LEFT   workspaces → layout → music
-RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | state icons | connections | tray
+LEFT   workspaces → layout symbol → music
+RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | idle/night/recording/DND | connections | tray
 ```
 
-Music replaces the window title and uses the theme accent while playing. CPU, RAM, GPU, volume and temperature use distinct colors from the current theme. Idle, night light, recording and do-not-disturb controls remain visible in a fixed order; nothing expands on hover. There is no DEV shortcut or focus timer.
+- Numbered workspace tags with a solid active-tag highlight and occupied markers.
+- `[]=` tiled, `|||` scrolling and `><>` floating layout symbols.
+- Fixed-width, elided music title; the theme accent is used while playing.
+- Tight CPU, RAM, GPU and volume text blocks, plus an independent temperature block.
+- Fixed-order corner controls. Nothing expands on hover.
+- Native Omarchy calendar, network, Bluetooth, audio, power and keyboard controls.
+- The flat tray implementation is included under its MIT license; a separate Flat Tray plugin is unnecessary. Its icons appear when applications register tray items. Keyboard layout follows Omarchy's normal visibility rules.
 
-## Requirements
-
-- Omarchy with its Quickshell shell, `qs.Ui`, `qs.Commons`, and the `omarchy plugin` commands. Developed against the installed shell in November 2026; older Waybar-based releases are not supported.
-- Python 3, `awk`, GNU `timeout`, and `wpctl` for local status reads.
-- An NVIDIA GPU and working `nvidia-smi` for GPU load and temperature. The current implementation reads GPU index `0`; unavailable readings display `—` without collapsing their slots. AMD and Intel sensors are not implemented.
-- `btop` and `nvtop` for click-through monitoring.
-- An MPRIS-compatible player for music controls. Without a player, the music slot shows “No music.”
-- A Nerd Font for shell icons, normally provided by Omarchy.
-- [Flat Tray](https://github.com/WhiteWebDev/omarchy-flat-tray) for the complete bar preset. The repository does not vendor or automatically download that dependency.
-
-## Install the complete bar
-
-From this checkout, first install Flat Tray if it is not already present:
-
-```bash
-omarchy plugin add https://github.com/WhiteWebDev/omarchy-flat-tray.git
-python scripts/install.py --dry-run --apply-layout
-python scripts/install.py --apply-layout
-```
-
-The installer validates all six manifests, copies the plugin files into `~/.config/omarchy/plugins/`, applies only the `bar` subtree of `shell.json`, and restarts the shell. Existing idle settings and unrelated plugins remain intact. Replaced plugin directories and the previous `shell.json` are saved under `~/.config/omarchy/backups/dwm-bar-<timestamp>-<suffix>/`. Installation file failures roll back the copied plugins and configuration.
-
-To update plugin code without resetting your customized layout:
-
-```bash
-python scripts/install.py
-```
-
-Installed files are snapshots, not symlinks. Edit this checkout and rerun the installer to deploy changes. `--no-reload` skips restarting the shell; `--config-dir PATH` supports isolated installation checks.
-
-## Omarchy plugin format
-
-Omarchy's Git installer accepts one root `manifest.json`. This repository's root is the independently installable `anky.dwm-status` bar widget. The other pieces live in `plugins/`, each with its own schema-version-1 manifest and relative QML entry point:
-
-| Plugin ID | Role |
-| --- | --- |
-| `anky.dwm-status` | CPU, RAM, GPU utilization and volume text |
-| `anky.workspaces` | Numbered tags, occupied indicators and layout switch |
-| `anky.music` | Fixed-width MPRIS music display and playback controls |
-| `anky.temperature` | Independent NVIDIA GPU temperature widget |
-| `anky.indicators` | Fixed-order idle, night light, recording and DND controls |
-| `anky.divider` | Reusable theme-colored separators |
-
-Running `omarchy plugin add <git-url> --enable` against a future published copy installs **only the root status widget**. Use the local installer above for the complete bar. Existing installs with the same IDs should use the installer rather than `plugin add`.
-
-The preset uses Omarchy's native clock, audio, network, Bluetooth, power and keyboard widgets, plus Flat Tray. Those native controls retain their normal panels. Temperature is deliberately separate from GPU utilization. Old experimental bar replacements, window titles, timers, backups, machine-specific idle settings and unused scripts are excluded from this repository.
+The bar always sits at the top. It respects the current background setting: `omarchy bar background opaque`, `glassy`, or `none`. The layout itself is defined in `DwmBar.qml`; dragging or changing the old stock bar's widget list does not change this bundled layout.
 
 ## Controls
 
 | Item | Action |
 | --- | --- |
-| Workspace tag | Left click selects the workspace; right click opens Omarchy's menu; wheel navigates workspaces |
-| Layout symbol | Click cycles the workspace layout; `[]=` tiled, `|||` scrolling, `><>` floating |
+| Workspace tag | Left click selects; right click opens Omarchy's menu; wheel navigates |
+| Layout symbol | Click cycles the current workspace layout |
 | Music | Left click play/pause; right click next; middle click previous |
-| CPU or RAM | Open `btop` |
-| GPU or temperature | Open `nvtop` |
-| Volume text | Left click opens audio; right click mutes/unmutes; wheel changes volume in 5% steps, capped at 100% |
-| Date/time | Native calendar and alternate date-format controls |
+| CPU / RAM | Open `btop` |
+| GPU / temperature | Open `nvtop` |
+| Volume text | Left click opens audio; right click mutes; wheel adjusts by 5%, capped at 100% |
+| Date/time | Open Omarchy's calendar |
 | Coffee icon | Toggle stay-awake / normal idle locking |
-| Night-light icon | Toggle night light |
-| Recording icon | Open recording choices, or stop an active recording |
-| DND icon | Toggle notification silencing |
-| Native connection, audio and power icons | Open their normal Omarchy panels |
-| Tray icons | Normal application actions and context menus |
+| Night light | Toggle screen temperature |
+| Recording | Open recording choices, or stop an active recording |
+| DND | Toggle notification silencing |
+| Native connection, audio and power icons | Open their normal panels |
+| Tray | Application actions and context menus |
 
-Music titles are elided instead of scrolling. User-controlled titles are bounded and displayed as plain text, and are never placed in tooltips. Sensor reads use fixed command argument arrays, numeric validation and timeouts. The widgets do not access the network.
+There is no window-title widget, DEV shortcut or focus timer.
 
-## Theme colors and status
+## Theme colors
 
-Palette files are read from Omarchy's current theme, with semantic colors falling back to the theme accent. Theme color changes reload the palette.
+All colors come from the current Omarchy palette; semantic colors fall back to the theme accent. Theme changes reload the palette.
 
 | Widget | Normal | State change |
 | --- | --- | --- |
-| CPU | Theme green | Theme red at 90% |
-| RAM | Theme blue | Theme red at 90% |
-| GPU | Theme magenta | Theme yellow at 95%; muted when unavailable |
-| Volume | Theme cyan | Muted palette color while muted |
-| GPU temperature | Theme cyan | Theme yellow at 75°C; theme red at 85°C; muted when unavailable |
-| Music | Theme accent while playing | Muted while paused or absent |
-| Stay-awake / night light / recording / DND | Muted when off | Theme cyan / yellow / red / magenta when on |
+| CPU | Green | Red at 90% |
+| RAM | Blue | Red at 90% |
+| GPU | Magenta | Yellow at 95%; muted when unavailable |
+| Volume | Cyan | Muted when muted |
+| GPU temperature | Cyan | Yellow at 75°C; red at 85°C; muted when unavailable |
+| Music | Accent while playing | Muted when paused or absent |
+| Idle / night / recording / DND | Muted when off | Cyan / yellow / red / magenta when on |
 
-CPU, RAM and volume refresh every two seconds. GPU utilization, temperature and corner state controls refresh every five seconds. Each monitor hosts its own readers. Actions also request a state refresh; native state changes may take up to one poll interval to appear. NVIDIA polling can wake a sleeping discrete GPU and consume additional battery power.
+## Requirements and behavior
 
-The preset captures the current glassy top-bar background. Change it with `omarchy bar background opaque`, `glassy`, or `none`; this does not affect the palette used by individual widgets.
+Requires Omarchy's Quickshell shell and plugin CLI, including the full-bar API, `qs.Ui` and `qs.Commons`. Older Waybar releases are unsupported. The bar extends the installed `/usr/share/omarchy/shell/plugins/bar/Bar.qml`, without modifying or copying packaged Omarchy source.
 
-## Validation and tests
+Python 3, `awk`, GNU `timeout`, `wpctl` and a Nerd Font are normally provided by Omarchy. `btop` and `nvtop` are needed for monitoring shortcuts. Music uses MPRIS; without a compatible player the slot says “No music.” NVIDIA GPU index `0` is read through `nvidia-smi`; Intel/AMD GPU sensors are not implemented. Unsupported or missing readings display `—` and retain their space.
+
+CPU, RAM and volume refresh every two seconds; GPU, temperature and corner states every five seconds. Each monitor hosts its own readers. NVIDIA polling may wake a sleeping discrete GPU and consume battery power. The plugin itself makes no network requests.
+
+Music metadata is bounded and rendered as plain text. It is never used in a tooltip or shell command. Sensor values are validated, reads use timeouts and fixed command arguments, and click target widths stay stable as readings change.
+
+## Repository format
+
+There is exactly one root `manifest.json`, with `kinds: ["bar"]` and `entryPoints.bar: "DwmBar.qml"`. `widgets/` contains private QML components, translations and helpers, not independently installed plugins. The bar merges these components into the native widget registry while retaining the system panel implementations.
+
+Version 2 replaces the original multi-plugin package. Existing `anky.dwm-status`, `anky.workspaces`, `anky.music`, `anky.temperature`, `anky.indicators` and `anky.divider` installations are no longer used by the active full bar. They can remain available for rollback; new installs need only `anky.dwm-bar`.
+
+## Validation
 
 ```bash
 python scripts/check.py
+python scripts/check.py --runtime
 ```
 
-This validates every manifest with Omarchy, runs JavaScript parser checks with Node.js, and tests installation against temporary configuration directories. Tests cover malformed sensor values, markup-shaped input, bounded theme parsing, preserved unrelated settings, backup contents, missing dependencies, dry runs and rollback. They do not toggle desktop settings or start screen recording.
-
-For runtime validation after installing:
-
-```bash
-omarchy-shell shell ping
-omarchy plugin list --json
-```
-
-## Restore
-
-Use the backup path printed by the installer. Copy its `shell.json` back to `~/.config/omarchy/shell.json` and restore any backed-up plugin directories you want to revert, then run `omarchy restart shell`. Newly added plugin directories can remain installed but inactive after restoring the old layout.
+The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings and registry reinjection. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
 
 ## License
 
-MIT. The workspace implementation derives from Omarchy; see [NOTICE](NOTICE) and [LICENSE](LICENSE). Flat Tray is maintained separately.
+MIT. Workspace code derives from Omarchy. Flat Tray is vendored from [WhiteWebDev/omarchy-flat-tray](https://github.com/WhiteWebDev/omarchy-flat-tray) with its license preserved. See [NOTICE](NOTICE), [LICENSE](LICENSE) and [the tray license](widgets/tray/LICENSE).

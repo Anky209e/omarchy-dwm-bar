@@ -1,21 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "anky.dwm-status",
-  "name": "DWM Status",
-  "version": "1.0.0",
+  "id": "anky.dwm-bar",
+  "name": "DWM Bar",
+  "version": "2.0.0",
   "author": "Ankit Kumar",
-  "description": "Compact CPU, RAM, NVIDIA GPU and volume text blocks using the active Omarchy palette",
+  "license": "MIT",
+  "description": "Complete theme-aware dwm-style bar with music, metrics, state controls and a flat tray in one plugin",
   "kinds": [
-    "bar-widget"
+    "bar"
   ],
   "entryPoints": {
-    "barWidget": "Status.qml"
-  },
-  "barWidget": {
-    "displayName": "DWM Status",
-    "category": "Status",
-    "allowMultiple": false,
-    "defaultSection": "right"
-  },
-  "license": "MIT"
+    "bar": "DwmBar.qml"
+  }
 }

@@ -1,8 +1,12 @@
-DWM Workspaces is derived from the Omarchy shell workspace widget.
-Original project: https://github.com/basecamp/omarchy
-Copyright Omarchy contributors; distributed under the MIT license.
+Workspace implementation derives from Omarchy (MIT):
+https://github.com/basecamp/omarchy
+Copyright Omarchy contributors.
 
-Other widgets use Omarchy qs.Ui and qs.Commons at runtime. Those packaged
-components and the third-party Flat Tray plugin are dependencies, not vendored.
+widgets/tray/ is vendored from WhiteWebDev Flat Tray (MIT):
+https://github.com/WhiteWebDev/omarchy-flat-tray
+Copyright (c) 2026 WhiteWebDev (modifications)
+Copyright Omarchy contributors (original tray widget).
+Its full license is preserved in widgets/tray/LICENSE.
 
-Flat Tray: https://github.com/WhiteWebDev/omarchy-flat-tray
+The root bar extends the system-installed Omarchy Bar and uses qs.Ui and
+qs.Commons at runtime. Packaged Omarchy source is never modified or vendored.

@@ -7,7 +7,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "anky.indicators"
+  moduleName: "dwm.indicators"
   property var state: ({awake: false, night: false, recording: false, dnd: false})
   implicitWidth: row.implicitWidth
   implicitHeight: barSize

@@ -7,7 +7,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "anky.music"
+  moduleName: "dwm.music"
   readonly property var players: Mpris.players.values
   readonly property var player: {
     for (var i = 0; i < players.length; i++) if (players[i].isPlaying) return players[i]
