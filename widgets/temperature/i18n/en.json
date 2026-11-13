@@ -1,1 +1,6 @@
-{"temperature": "TEMP %1\u00b0C", "unavailable": "TEMP \u2014", "hint": "GPU temperature \u00b7 Click to open nvtop"}
+{
+  "temperature": "TEMP %1\u00b0C",
+  "unavailable": "TEMP \u2014",
+  "hint": "GPU temperature \u00b7 Left click: nvtop \u00b7 Right click: refresh hardware",
+  "paused": "Hardware polling paused for fullscreen gaming \u00b7 Right click: refresh once"
+}

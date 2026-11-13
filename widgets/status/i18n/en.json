@@ -4,5 +4,7 @@
   "volume": "VOL %1",
   "muted": "MUTE",
   "gpu": "GPU %1%",
-  "gpuUnavailable": "GPU \u2014"
+  "gpuUnavailable": "GPU \u2014",
+  "paused": "Hardware polling paused for fullscreen gaming \u00b7 Right click: refresh once",
+  "monitorHint": "Left click: monitor \u00b7 Right click: refresh hardware"
 }

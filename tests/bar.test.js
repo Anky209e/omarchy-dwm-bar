@@ -54,3 +54,30 @@ bind.call(context);
 assert.equal(context.inheritedRegistry, refreshed);
 assert.equal(context.barWidgetRegistry, bundled);
 console.log('Single-plugin checks passed: self-contained layout, preserved prior config, backgrounds, native imports and registry reinjection.');
+
+// Only the root owns readers. Monitor widgets consume the same instance.
+assert.equal((source.match(/Services\.Telemetry\s*\{/g) || []).length, 1);
+assert.equal((source.match(/telemetry: sharedTelemetry/g) || []).length, 3);
+for (const file of ['status/Status.qml','temperature/Temperature.qml','indicators/Indicators.qml']) {
+  const widget = fs.readFileSync(path.join(repo, 'widgets', file), 'utf8');
+  assert(!/\b(?:Process|Timer)\s*\{/.test(widget), file + ' must not own pollers');
+}
+const service = fs.readFileSync(path.join(repo,'services/Telemetry.qml'),'utf8');
+function telemetryMethod(name) {
+  const match=service.match(new RegExp('function '+name+'\\(manual\\) \\{([\\s\\S]*?)\\n  \\}'));
+  assert(match, name); return new Function('manual','with(this){'+match[1]+'}');
+}
+const requestFast = telemetryMethod('refreshFast'), requestGpu = telemetryMethod('refreshGpu');
+const shared = {hardwarePaused:true,fastRequests:0,gpuRequests:0,fast:{running:false},gpuRead:{running:false},helper:mode=>['python','telemetry.py',mode]};
+shared.root=shared;
+requestFast.call(shared,false); requestGpu.call(shared,false);
+assert.equal(shared.fastRequests,0);assert.equal(shared.gpuRequests,0);
+requestFast.call(shared,true);requestGpu.call(shared,true);
+assert.equal(shared.fastRequests,1);assert.equal(shared.gpuRequests,1);
+assert.equal(shared.fast.command[2],'snapshot');
+requestFast.call(shared,true);assert.equal(shared.fastRequests,1,'Concurrent requests must coalesce');
+shared.hardwarePaused=false;shared.fast.running=false;shared.gpuRead.running=false;
+requestFast.call(shared,false);requestGpu.call(shared,false);
+assert.equal(shared.fastRequests,2);assert.equal(shared.gpuRequests,2);
+assert(service.includes('running: root.gameReady && !root.hardwarePaused'));
+console.log('Efficiency checks passed: one service for all monitors; automatic reads pause, manual reads work, and polling resumes.');

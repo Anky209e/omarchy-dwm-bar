@@ -12,32 +12,19 @@ function body(file, name) {
 function execute(file, name) {
   return new Function('raw', `with(this){${body(file, name)}}`);
 }
-const gpu = execute('widgets/status/Status.qml', 'updateGpu');
-const reading = {gpu: 0, gpuAvailable: false};
-gpu.call(reading, '28\n');
-assert.equal(reading.gpu, 28);
-assert.equal(reading.gpuAvailable, true);
-for (const raw of ['101', '-1', 'N/A', '', '<img src="https://example.invalid">']) {
-  gpu.call(reading, raw);
-  assert.equal(reading.gpuAvailable, false);
-}
-const temperature = execute('widgets/temperature/Temperature.qml', 'update');
-const sensor = {temperature: -1};
-temperature.call({root: sensor}, '48\n');
-assert.equal(sensor.temperature, 48);
-for (const raw of ['151', '-1', 'N/A', '', '<img src="https://example.invalid">']) {
-  temperature.call({root: sensor}, raw);
-  assert.equal(sensor.temperature, -1);
-}
-const update = execute('widgets/status/Status.qml', 'update');
-const cpu = {previousTotal: 0, previousIdle: 0, cpu: -1, ram: -1};
-update.call(cpu, '100 0 100 800 0 0 0 0\n1000 400');
-update.call(cpu, '150 0 150 900 0 0 0 0\n1000 250');
-assert.equal(cpu.cpu, 50);
-assert.equal(cpu.ram, 75);
-update.call(cpu, '<img src=x>');
-assert.equal(cpu.cpu, 50);
-assert.equal(cpu.ram, 75);
+const model = require('../services/TelemetryModel.js');
+let sample = model.hardware({total: 0, idle: 0, cpu: -1, ram: -1}, {total: 1000, idle: 800, ram: 60});
+sample = model.hardware(sample, {total: 1200, idle: 900, ram: 75});
+assert.equal(sample.cpu, 50); assert.equal(sample.ram, 75);
+const reset = model.resetBaseline(sample);
+const resumed = model.hardware(reset, {total: 999999, idle: 999900, ram: 40});
+assert.equal(resumed.cpu, 50, 'Resume must discard the game interval from the CPU average');
+assert.equal(model.hardware(sample, {total: '<img src=x>', idle: 0, ram: 50}), sample);
+assert.equal(model.hardware(sample, {total: 1200, idle: 900, ram: 101}), sample);
+assert.equal(model.hardware(reset, {total: 1300, idle: 950, ram: 35, cpu: 73}).cpu, 73, 'Manual snapshot supplies a short CPU sample');
+assert.deepEqual(model.gpu({available: true, gpu: 28, temperature: 48}), {available: true, gpu: 28, temperature: 48});
+for (const bad of [null, {available:true,gpu:101,temperature:48}, {available:true,gpu:28,temperature:151}, {available:true,gpu:'<img src=x>',temperature:48}])
+  assert.equal(model.gpu(bad).available, false);
 const parse = execute('widgets/status/ThemePalette.qml', 'parse');
 const palette = {values: {}};
 parse.call(palette, 'green = "#9ece6a"\ncyan = "#449dab"\nblue = "<img src=x>"');
@@ -52,4 +39,4 @@ for (const plugin of ['music', 'indicators', 'temperature']) {
 const music = fs.readFileSync(path.join(root, 'widgets/music/Music.qml'), 'utf8');
 assert(music.includes('textFormat: Text.PlainText'));
 assert(!music.match(/tooltipText:\s*root\.player/));
-console.log('Parser checks passed: CPU deltas, available RAM, GPU, temperature, bounded theme palette and markup-shaped input.');
+console.log('Parser checks passed: shared CPU deltas, resume baseline, manual samples, combined GPU/temperature, bounded palette and markup-shaped input.');

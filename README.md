@@ -49,8 +49,8 @@ The bar always sits at the top. It respects the current background setting: `oma
 | Workspace tag | Left click selects; right click opens Omarchy's menu; wheel navigates |
 | Layout symbol | Click cycles the current workspace layout |
 | Music | Left click play/pause; right click next; middle click previous |
-| CPU / RAM | Open `btop` |
-| GPU / temperature | Open `nvtop` |
+| CPU / RAM | Left click opens `btop`; right click refreshes hardware once |
+| GPU / temperature | Left click opens `nvtop`; right click refreshes hardware once |
 | Volume text | Left click opens audio; right click mutes; wheel adjusts by 5%, capped at 100% |
 | Date/time | Open Omarchy's calendar |
 | Coffee icon | Toggle stay-awake / normal idle locking |
@@ -82,7 +82,33 @@ Requires Omarchy's Quickshell shell and plugin CLI, including the full-bar API, 
 
 Python 3, `awk`, GNU `timeout`, `wpctl` and a Nerd Font are normally provided by Omarchy. `btop` and `nvtop` are needed for monitoring shortcuts. Music uses MPRIS; without a compatible player the slot says “No music.” NVIDIA GPU index `0` is read through `nvidia-smi`; Intel/AMD GPU sensors are not implemented. Unsupported or missing readings display `—` and retain their space.
 
-CPU, RAM and volume refresh every two seconds; GPU, temperature and corner states every five seconds. Each monitor hosts its own readers. NVIDIA polling may wake a sleeping discrete GPU and consume battery power. The plugin itself makes no network requests.
+One shared telemetry object serves every monitor. CPU and RAM refresh every two seconds. GPU utilization and temperature are read together in one bounded `nvidia-smi` query every five seconds. Volume follows PipeWire events; idle, night light and DND follow Omarchy service events. Only screen-recording status retains a shared five-second check. Extra monitors do not create extra polling processes. NVIDIA polling outside gaming mode may still wake a sleeping discrete GPU and consume battery power. The plugin itself makes no network requests.
+
+## Gaming efficiency
+
+When a recognized game is in real fullscreen on a visible workspace on either monitor, automatic CPU/RAM and GPU/temperature polling pauses. Existing hardware values remain in their fixed slots, shown in the theme's muted color. Music, volume, date/time, recording controls and tray interaction continue normally. This changes bar telemetry only: it does not alter power profiles, notifications, idle locking, game settings or system performance governors.
+
+Fullscreen changes, workspace changes and window/monitor lifecycle events trigger a debounced detection probe; there is no periodic game-detection poll. Steam game window classes and positive `SteamAppId`/`SteamGameId` process metadata are recognized, along with a small list of known native game classes. Only those Steam identifiers are read from a bounded environment buffer; environments are never returned or logged. A fullscreen browser, maximized window, or game on an invisible workspace does not trigger the policy.
+
+Right-click CPU, RAM, GPU or TEMP to take a fresh hardware snapshot even while automatic polling is paused. The CPU snapshot samples a short interval; resuming normal polling resets its baseline so an entire gaming session is not averaged into the next reading. Polling resumes after leaving fullscreen, switching away from all fullscreen games, or closing the game.
+
+For games not detected automatically, add exact window classes to the existing `bar` object in `~/.config/omarchy/shell.json`:
+
+```json
+{
+  "gamingEfficiency": true,
+  "gameClasses": ["YourGameClass", "AnotherGame.exe"]
+}
+```
+
+These are fields inside `bar`, not a replacement for the whole file. Class matching is case-insensitive and exact. Set `gamingEfficiency` to `false` to keep hardware polling active during games. No additional plugin is required.
+
+To inspect the shared reader or request a manual sample from the terminal:
+
+```bash
+omarchy-shell dwm.bar telemetry
+omarchy-shell dwm.bar refresh
+```
 
 Music metadata is bounded and rendered as plain text. It is never used in a tooltip or shell command. Sensor values are validated, reads use timeouts and fixed command arguments, and click target widths stay stable as readings change.
 
@@ -99,7 +125,7 @@ python scripts/check.py
 python scripts/check.py --runtime
 ```
 
-The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings and registry reinjection. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
+The default check validates the single root manifest, bundled assets, numeric parsers, bounded theme input, plain-text music, complete runtime layout, preservation of prior settings, registry reinjection, shared-reader ownership, pause/manual/resume behavior, combined GPU parsing and conservative game classification. `--runtime` additionally checks the active graphical bar's actual component geometry, including that no old companion widget is rendering. Neither command toggles desktop settings or starts recording. Node.js is required only for these tests.
 
 ## License
 

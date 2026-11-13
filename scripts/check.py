@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -23,6 +24,7 @@ print('Validated: one root bar manifest, no companion installs, bundled licensed
 env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
 subprocess.run(['node', 'tests/parsers.test.js'], cwd=repo, env=env, check=True)
 subprocess.run(['node', 'tests/bar.test.js'], cwd=repo, env=env, check=True)
+subprocess.run([sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py', '-v'], cwd=repo, env=env, check=True)
 if args.runtime:
     plugins = json.loads(subprocess.check_output(['omarchy', 'plugin', 'list', '--json'], text=True))
     active = next(p for p in plugins if p['id'] == 'anky.dwm-bar')
@@ -40,4 +42,7 @@ if args.runtime:
         time.sleep(0.1)
     assert required <= ids, f'Missing widgets after startup: {required - ids}'
     assert not any(name.startswith('anky.') or name == 'whitewebdev.flat-tray' for name in ids), 'A legacy companion is still rendering'
-    print('Runtime check passed: one active bar renders private widgets and native panels without companion entries.')
+    telemetry = json.loads(subprocess.check_output(['omarchy-shell', 'dwm.bar', 'telemetry'], text=True))
+    assert isinstance(telemetry['hardwarePaused'], bool)
+    assert isinstance(telemetry['fastRequests'], int) and isinstance(telemetry['gpuRequests'], int)
+    print('Runtime check passed: one active bar renders private widgets with shared telemetry:', telemetry)

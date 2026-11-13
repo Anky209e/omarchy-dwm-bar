@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
@@ -8,68 +7,21 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "dwm.status"
-  property real previousTotal: 0
-  property real previousIdle: 0
-  property int cpu: -1
-  property int ram: -1
-  property string volume: "—"
-  property bool muted: false
-  ThemePalette { id: themePalette }
-  Process {
-    id: volumePoll
-    command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
-    stdout: StdioCollector {
-      onStreamFinished: {
-        var match = text.match(/^Volume:\s+([0-9.]+)/)
-        root.volume = match && isFinite(Number(match[1])) ? Commons.I18n.formatNumber(Math.round(Number(match[1]) * 100)) + "%" : "—"
-        root.muted = text.indexOf("MUTED") >= 0
-      }
-    }
-  }
-  Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!volumePoll.running) volumePoll.running = true }
-  Timer { id: volumeRefresh; interval: 150; onTriggered: if (!volumePoll.running) volumePoll.running = true }
-  property bool gpuAvailable: false
-  property int gpu: 0
-  function updateGpu(raw) {
-    var value = String(raw).trim()
-    if (!/^\d{1,3}$/.test(value) || Number(value) > 100) { gpuAvailable = false; return }
-    gpu = Number(value); gpuAvailable = true
-  }
-
-  Process {
-    id: gpuPoll
-    command: ["timeout", "2", "nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits", "-i", "0"]
-    stdout: StdioCollector { onStreamFinished: root.updateGpu(text) }
-    onExited: function(code) { if (code !== 0) root.gpuAvailable = false }
-  }
-  Timer { interval: 5000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!gpuPoll.running) gpuPoll.running = true }
+  property QtObject telemetry: null
+  readonly property int cpu: telemetry ? telemetry.hardware.cpu : -1
+  readonly property int ram: telemetry ? telemetry.hardware.ram : -1
+  readonly property bool gpuAvailable: !!telemetry && telemetry.gpu.available
+  readonly property int gpu: telemetry ? telemetry.gpu.gpu : -1
+  readonly property bool muted: !!telemetry && telemetry.muted
+  readonly property string volume: telemetry && telemetry.volumePercent >= 0 ? Commons.I18n.formatNumber(telemetry.volumePercent) + "%" : "—"
+  readonly property bool hardwarePaused: !!telemetry && telemetry.hardwarePaused
   implicitHeight: barSize
+  ThemePalette { id: themePalette }
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
-
-  function update(raw) {
-    var lines = raw.trim().split("\n")
-    if (lines.length !== 2) return
-    var fields = lines[0].trim().split(/\s+/).map(Number)
-    if (fields.length < 8 || fields.some(function(n) { return !isFinite(n) || n < 0 })) return
-    // Linux guest times are already included in user/nice: only sum eight fields.
-    var total = fields.slice(0, 8).reduce(function(a, b) { return a + b }, 0)
-    var idle = fields[3] + fields[4]
-    if (previousTotal > 0 && total > previousTotal)
-      cpu = Math.max(0, Math.min(100, Math.round(100 * (1 - (idle - previousIdle) / (total - previousTotal)))))
-    previousTotal = total
-    previousIdle = idle
-    var memory = lines[1].trim().split(/\s+/).map(Number)
-    if (memory.length === 2 && memory[0] > 0 && isFinite(memory[1]))
-      ram = Math.max(0, Math.min(100, Math.round(100 * (1 - memory[1] / memory[0]))))
+  function monitor(button, program) {
+    if (button === Qt.RightButton) { if (telemetry) telemetry.refreshHardware() }
+    else Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", program])
   }
-
-  Process {
-    id: stats
-    command: ["sh", "-c", "awk '/^cpu / {for(i=2;i<=9;i++) printf \"%s%s\", $i, (i==9?\"\\n\":\" \")}' /proc/stat; awk '/^MemTotal:/ {t=$2} /^MemAvailable:/ {a=$2} END {print t, a}' /proc/meminfo"]
-    stdout: StdioCollector { onStreamFinished: root.update(text) }
-  }
-  Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!stats.running) stats.running = true }
-
   implicitWidth: blocks.implicitWidth
 
   FontMetrics {
@@ -92,22 +44,25 @@ BarWidget {
     Block {
       reservedText: strings.t("cpu").arg(Commons.I18n.formatNumber(100))
       text: strings.t("cpu").arg(root.cpu < 0 ? "—" : Commons.I18n.formatNumber(root.cpu))
-      foreground: root.cpu >= 90 ? themePalette.red : themePalette.green
-      onPressed: Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", "btop"])
+      foreground: root.hardwarePaused ? themePalette.muted : root.cpu >= 90 ? themePalette.red : themePalette.green
+      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      onPressed: function(button) { root.monitor(button, "btop") }
     }
     Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
     Block {
       reservedText: strings.t("ram").arg(Commons.I18n.formatNumber(100))
       text: strings.t("ram").arg(root.ram < 0 ? "—" : Commons.I18n.formatNumber(root.ram))
-      foreground: root.ram >= 90 ? themePalette.red : themePalette.blue
-      onPressed: Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", "btop"])
+      foreground: root.hardwarePaused ? themePalette.muted : root.ram >= 90 ? themePalette.red : themePalette.blue
+      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      onPressed: function(button) { root.monitor(button, "btop") }
     }
     Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
     Block {
       reservedText: strings.t("gpu").arg(Commons.I18n.formatNumber(100))
       text: root.gpuAvailable ? strings.t("gpu").arg(Commons.I18n.formatNumber(root.gpu)) : strings.t("gpuUnavailable")
-      foreground: !root.gpuAvailable ? themePalette.muted : root.gpu >= 95 ? themePalette.yellow : themePalette.magenta
-      onPressed: Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", "nvtop"])
+      foreground: root.hardwarePaused || !root.gpuAvailable ? themePalette.muted : root.gpu >= 95 ? themePalette.yellow : themePalette.magenta
+      tooltipText: root.hardwarePaused ? strings.t("paused") : strings.t("monitorHint")
+      onPressed: function(button) { root.monitor(button, "nvtop") }
     }
     Block { text: "|"; interactive: false; fixedWidth: Style.space(4); horizontalMargin: 0; opacity: 0.3 }
     Block {
@@ -117,11 +72,9 @@ BarWidget {
       onPressed: function(button) {
         if (button === Qt.RightButton) Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"])
         else Quickshell.execDetached(["omarchy-shell", "shell", "toggle", "omarchy.audio"])
-        volumeRefresh.restart()
       }
       onWheelMoved: function(delta) {
         if (delta !== 0) Quickshell.execDetached(["wpctl", "set-volume", "-l", "1", "@DEFAULT_AUDIO_SINK@", delta > 0 ? "5%+" : "5%-"])
-        volumeRefresh.restart()
       }
     }
   }

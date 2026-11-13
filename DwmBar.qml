@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import "services" as Services
 import "file:/usr/share/omarchy/shell/plugins/bar" as OmarchyBar
 import "widgets/workspaces" as Tags
 import "widgets/music" as Music
@@ -14,12 +15,18 @@ import "widgets/tray" as Tray
 OmarchyBar.Bar {
   id: root
   property var inheritedRegistry: null
+  Services.Telemetry {
+    id: sharedTelemetry
+    shell: root.shell
+    gamingEnabled: root.barConfig.gamingEfficiency !== false
+    extraGameClasses: root.barConfig.gameClasses || []
+  }
 
   Component { id: tags; Tags.Workspaces {} }
   Component { id: music; Music.Music {} }
-  Component { id: status; Status.Status {} }
-  Component { id: temperature; Temperature.Temperature {} }
-  Component { id: indicators; Indicators.Indicators {} }
+  Component { id: status; Status.Status { telemetry: sharedTelemetry } }
+  Component { id: temperature; Temperature.Temperature { telemetry: sharedTelemetry } }
+  Component { id: indicators; Indicators.Indicators { telemetry: sharedTelemetry } }
   Component { id: divider; Divider.Divider {} }
   Component { id: tray; Tray.Tray {} }
 
