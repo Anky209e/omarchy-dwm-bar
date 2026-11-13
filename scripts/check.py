@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--runtime', action='store_true', help='Also check the active graphical bar; never changes desktop settings')
@@ -26,9 +27,17 @@ if args.runtime:
     plugins = json.loads(subprocess.check_output(['omarchy', 'plugin', 'list', '--json'], text=True))
     active = next(p for p in plugins if p['id'] == 'anky.dwm-bar')
     assert active['active'], 'Single bar plugin did not become active'
-    geometry = json.loads(subprocess.check_output(['omarchy-shell', 'shell', 'debugBarGeometry'], text=True))
-    ids = {entry['id'] for entry in geometry}
     required = {'dwm.workspaces', 'dwm.music', 'dwm.status', 'dwm.temperature', 'dwm.indicators', 'dwm.divider', 'dwm.tray', 'omarchy.clock', 'omarchy.audio', 'omarchy.network'}
-    assert required <= ids, f'Missing widgets: {required - ids}'
+    # Plugin selection precedes asynchronous per-monitor QML incubation.
+    # An immediate post-restart check must wait for the widgets to appear.
+    deadline = time.monotonic() + 8
+    ids = set()
+    while time.monotonic() < deadline:
+        geometry = json.loads(subprocess.check_output(['omarchy-shell', 'shell', 'debugBarGeometry'], text=True, timeout=2))
+        ids = {entry['id'] for entry in geometry}
+        if required <= ids:
+            break
+        time.sleep(0.1)
+    assert required <= ids, f'Missing widgets after startup: {required - ids}'
     assert not any(name.startswith('anky.') or name == 'whitewebdev.flat-tray' for name in ids), 'A legacy companion is still rendering'
     print('Runtime check passed: one active bar renders private widgets and native panels without companion entries.')
