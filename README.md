@@ -183,4 +183,24 @@ Install with `omarchy plugin install https://github.com/Anky209e/omarchy-dwm-bar
 - Test full/minimal/hidden profiles and themes with light and dark backgrounds.
 - Enable Game mode; automatic hardware requests must stop while volume and music remain usable.
 
-Full-bar third-party service access follows the installed Omarchy host API. This plugin does not grant additional service permissions. Very narrow outputs and very large trays may still need a Minimal profile; a general overflow drawer is not implemented.
+Full-bar third-party service access follows the installed Omarchy host API. This plugin does not grant additional service permissions. The adaptive drawer keeps connections, state controls, configured plugins and application tray items available when the corner is crowded. Very narrow outputs may still need a Minimal profile.
+
+## Adaptive drawer (2.5)
+
+The corner automatically collapses based on the output width, theme UI scale, configured add-on count and tray size. Workspaces, music, hardware readings, volume, date/time and settings stay on the bar. Click the three-dot Nerd icon for state toggles, native connection panels, configured plugins and tray icons. Tray icons wrap and long drawers scroll. General → Force drawer keeps it enabled on every display.
+
+![Controls drawer](docs/screenshots/overflow.png)
+
+![Bar settings](docs/screenshots/settings.png)
+
+### Compatibility and verification
+
+Tested on Omarchy **4.5.0-3** with the Omarchy build of Quickshell **0.3.2**, on 2560×1440 at 1× and 1920×1080 at 1.2×. Other versions are unverified because this complete bar uses Omarchy's installed bar host API.
+
+Run `python -B scripts/check.py --runtime` for automated checks. `python -B scripts/smoke.py --exercise` temporarily exercises the drawer, available native/add-on panels, Game mode pause/resume and monitor Full/Minimal profiles, then restores the affected preferences. This opens panels and temporarily changes the bar; it does not suspend the machine or change physical monitor layouts.
+
+Verified locally: both output profiles, drawer and native panel routing, Agents and hyprmoncfg panels, single-worker recovery after termination, and Game mode request counters stopping and resuming. Physical suspend/resume, cable hotplug, audio-device reconnection and player switching still require hands-on checks.
+
+The installed hyprmoncfg 2.7.0 had queued callbacks outlive destroyed panels. An optional source patch is included at [docs/hyprmoncfg-2.7.0-lifecycle.patch](docs/hyprmoncfg-2.7.0-lifecycle.patch); it has been applied to this machine's user-owned plugin. It is not needed to install the bar and is not applied automatically to another plugin. Two native Agents startup callbacks can still warn about `pointAt` after context destruction; its panel opens successfully. The packaged Agents source is unchanged.
+
+Keyboard/IPC shortcuts: `omarchy-shell dwm.bar.ui overflow` opens the drawer; `omarchy-shell dwm.bar.ui control omarchy.agents` opens Agents on the focused output. The control endpoint accepts only native controls and configured add-ons.

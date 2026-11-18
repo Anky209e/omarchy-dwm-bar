@@ -11,6 +11,7 @@ BarWidget {
   id: root
   moduleName: "dwm.tray"
 
+  property bool inDrawer:false
   property QtObject telemetry:null
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
   readonly property bool allowed:!telemetry || (telemetry.modeFor(monitorName)==="full" && telemetry.settings.showTray)
@@ -230,19 +231,27 @@ BarWidget {
     persistTrayState(p, h)
   }
 
-  visible: allowed && (pinnedItems.length > 0 || drawerCount > 0)
+  visible: allowed && (inDrawer || !telemetry || !telemetry.compactFor(monitorName)) && (pinnedItems.length > 0 || drawerCount > 0)
   clip: false
-  implicitWidth: root.vertical ? root.barSize : trayContent.implicitWidth
-  implicitHeight: root.vertical ? trayContent.implicitHeight : root.barSize
+  implicitWidth: root.inDrawer ? Style.space(300) : root.vertical ? root.barSize : trayContent.implicitWidth
+  implicitHeight: root.inDrawer ? (trayContent.item ? trayContent.item.implicitHeight : root.barSize) : root.vertical ? trayContent.implicitHeight : root.barSize
 
   Behavior on revealProgress {
     NumberAnimation { duration: root.animationDuration; easing.type: Easing.OutCubic }
   }
 
+  Component {
+    id:drawerTray
+    Flow {
+      width:root.width
+      Repeater { model:root.pinnedItems; TrayItem { width:root.trayItemExtent;height:root.trayItemExtent } }
+    }
+  }
+
   Loader {
     id: trayContent
     anchors.fill: parent
-    sourceComponent: root.vertical ? verticalTray : horizontalTray
+    sourceComponent: root.inDrawer ? drawerTray : root.vertical ? verticalTray : horizontalTray
   }
 
   Component {

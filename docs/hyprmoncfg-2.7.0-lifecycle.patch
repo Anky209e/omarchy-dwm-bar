@@ -1,0 +1,64 @@
+diff --git i/DisplayCanvas.qml w/DisplayCanvas.qml
+index 0527969..3b19d1b 100644
+--- i/DisplayCanvas.qml
++++ w/DisplayCanvas.qml
+@@ -84,8 +84,16 @@ BorderSurface {
+   function chipsChanged(animate) {
+     if (root.chipTravelPending) return
+     root.chipTravelPending = true
+-    var before = root.chipRects
+-    Qt.callLater(function() {
++    chipUpdate.before = root.chipRects
++    chipUpdate.animate = animate
++    chipUpdate.restart()
++  }
++  Timer {
++    id: chipUpdate
++    interval: 0
++    property var before: ({})
++    property bool animate: false
++    onTriggered: {
+       root.chipTravelPending = false
+       var after = root.snapshotChips()
+       root.chipRects = after
+@@ -99,7 +107,7 @@ BorderSurface {
+       for (var i = 0; i < moves.length; i++) ids[moves[i].id] = true
+       root.travelingIds = ids
+       root.travelingChips = moves
+-    })
++    }
+   }
+ 
+   onWorkspacePlanChanged: root.chipsChanged(true)
+diff --git i/InspectorViewport.qml w/InspectorViewport.qml
+index de28e42..8fcecec 100644
+--- i/InspectorViewport.qml
++++ w/InspectorViewport.qml
+@@ -33,18 +33,17 @@ Flickable {
+     contentY = Math.max(0, Math.min(position, Math.max(0, contentHeight - height)))
+   }
+ 
+-  onCurrentFieldChanged: Qt.callLater(function() { root.reveal(root.currentField) })
+-  onFocusedFieldChanged: Qt.callLater(function() { root.reveal(root.focusedField) })
+-  onHeightChanged: Qt.callLater(function() {
+-    root.reveal(root.currentField)
+-    root.reveal(root.focusedField)
+-  })
++  Timer {
++    id: revealLater
++    interval: 0
++    onTriggered: {root.reveal(root.currentField);root.reveal(root.focusedField)}
++  }
++  onCurrentFieldChanged: revealLater.restart()
++  onFocusedFieldChanged: revealLater.restart()
++  onHeightChanged: revealLater.restart()
+   onContentHeightChanged: {
+     contentY = Math.max(0, Math.min(contentY, Math.max(0, contentHeight - height)))
+-    Qt.callLater(function() {
+-      root.reveal(root.currentField)
+-      root.reveal(root.focusedField)
+-    })
++    revealLater.restart()
+   }
+ 
+   Item {

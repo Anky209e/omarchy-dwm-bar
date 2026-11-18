@@ -91,7 +91,7 @@ BarWidget {
                 columns: 2
                 spacing: Style.space(8)
                 Repeater {
-                  model: [{key:"gameMode",label:strings.t("gaming")},{key:"sleepAware",label:strings.t("sleep")}]
+                  model: [{key:"overflowAlways",label:strings.t("overflowAlways")},{key:"gameMode",label:strings.t("gaming")},{key:"sleepAware",label:strings.t("sleep")}]
                   Toggle {
                     id: preferenceToggle
                     required property var modelData

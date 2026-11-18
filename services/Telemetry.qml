@@ -1,5 +1,7 @@
 import QtQuick
 import Quickshell
+import qs.Commons as Commons
+import Quickshell.Services.SystemTray
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Mpris
@@ -9,7 +11,7 @@ import "TelemetryModel.js" as Model
 Item {
   id: root
   property var shell: null
-  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{},hiddenPlugins:[]})
+  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,overflowAlways:false,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{},hiddenPlugins:[]})
   property var hardware: ({total:0,idle:0,cpu:-1,ram:-1})
   property var gpu: ({available:false,gpu:-1,temperature:-1})
   property string fastState: "loading"
@@ -56,6 +58,13 @@ Item {
 
   function send(message) { if(worker.running) worker.write(JSON.stringify(message)+"\n") }
   function save(patch) { send({command:"settings",patch:patch}) }
+  property int extraCount: 0
+  function compactFor(name) {
+    var screens=Quickshell.screens
+    for(var i=0;i<screens.length;i++)if(screens[i].name===name)
+      return settings.overflowAlways || screens[i].width < Commons.Style.space(1300 + extraCount*27 + Math.min(12,SystemTray.items.values.length)*27)
+    return settings.overflowAlways===true
+  }
   function pluginVisible(name) { return (settings.hiddenPlugins || []).indexOf(name)<0 }
   function togglePlugin(name) {
     var next=(settings.hiddenPlugins || []).slice(), at=next.indexOf(name)

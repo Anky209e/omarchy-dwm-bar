@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.0
+
+- Add a per-output adaptive corner drawer with wrapped tray icons and scrolling.
+- Keep native and configured plugin panels accessible while their bar icons are collapsed.
+- Add Force drawer and focused-output control IPC.
+- Add opt-in desktop smoke checks, screenshots, verified compatibility and documented remaining hardware checks.
+- Include an optional hyprmoncfg 2.7.0 lifecycle patch; document native Agents startup warnings.
+
 ## 2.4.0
 
 - Add visible active markers and readable theme-derived sensor colors.

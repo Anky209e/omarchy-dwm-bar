@@ -46,5 +46,18 @@
   "saved": "Settings saved automatically",
   "reset": "Reset appearance",
   "resetConfirm": "Confirm reset appearance",
-  "resetHelp": "Restore widget visibility, sizing, polling and warning defaults. Display profiles, Game mode and remote cover permission are preserved."
+  "resetHelp": "Restore widget visibility, sizing, polling and warning defaults. Display profiles, Game mode and remote cover permission are preserved.",
+  "overflow": "More controls",
+  "overflowAlways": "Force drawer",
+  "help.overflowAlways": "Keep corner controls in the drawer on every output. Otherwise the bar chooses per display width and tray size.",
+  "trayItems": "Application tray",
+  "nativeControls": "Connections & plugins",
+  "state.awake": "Stay awake",
+  "state.night": "Night light",
+  "state.recording": "Recording",
+  "state.dnd": "Do not disturb",
+  "network": "Network",
+  "audio": "Audio",
+  "power": "Power",
+  "agents": "Agents"
 }

@@ -9,7 +9,7 @@ BarWidget {
   moduleName: "dwm.indicators"
   property QtObject telemetry: null
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
-  visible:!telemetry || (telemetry.modeFor(monitorName)==="full" && telemetry.settings.showIndicators)
+  visible:!telemetry || (telemetry.modeFor(monitorName)==="full" && telemetry.settings.showIndicators && !telemetry.compactFor(monitorName))
   readonly property var state: telemetry ? telemetry.state : ({awake: false, night: false, recording: false, dnd: false})
   implicitWidth: row.implicitWidth
   implicitHeight: barSize

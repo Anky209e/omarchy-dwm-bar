@@ -7,7 +7,7 @@ import tempfile
 DEFAULTS = {
     'fastInterval': 2, 'gpuInterval': 5, 'cpuWarn': 90, 'ramWarn': 90,
     'gpuWarn': 95, 'tempWarm': 75, 'tempHot': 85, 'musicWidth': 240,
-    'gameMode': False, 'sleepAware': True, 'visualizer': True,
+    'overflowAlways': False, 'gameMode': False, 'sleepAware': True, 'visualizer': True,
     'remoteArtwork': False, 'showCpu': True, 'showRam': True, 'showGpu': True,
     'showVolume': True, 'showTemperature': True, 'showIndicators': True,
     'showTray': True, 'showConnections': True, 'showMusic': True, 'showPlugins': True,

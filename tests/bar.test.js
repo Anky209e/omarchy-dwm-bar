@@ -96,3 +96,18 @@ assert.deepEqual(layouts.configuredExtras({left:['omarchy.agents'],tray:['omarch
 assert.deepEqual(layouts.configuredExtras(configured,{}),[]);
 assert.deepEqual(layouts.configuredExtras(null,registered),[]);
 console.log('Add-on layout regression passed: Agents and monitor widgets survive, settings stay intact, and duplicates/core/missing widgets are skipped.');
+
+const compactMatch=service.match(/function compactFor\(name\) \{([\s\S]*?)\n  \}/);
+assert(compactMatch);
+const compact=new Function('name','with(this){'+compactMatch[1]+'}');
+const compactContext={settings:{overflowAlways:false},extraCount:2,Quickshell:{screens:[{name:'narrow',width:1280},{name:'wide',width:2560}]},Commons:{Style:{space:n=>n}},SystemTray:{items:{values:[]}}};
+assert(compact.call(compactContext,'narrow'));
+assert(!compact.call(compactContext,'wide'));
+compactContext.settings.overflowAlways=true;
+assert(compact.call(compactContext,'wide'));
+compactContext.settings.overflowAlways=false;
+compactContext.Quickshell.screens[0].width=1400;
+assert(!compact.call(compactContext,'narrow'));
+compactContext.SystemTray.items.values=Array(8).fill({});
+assert(compact.call(compactContext,'narrow'),'Tray growth should trigger compact mode');
+console.log('Adaptive drawer checks passed: per-output width, forced drawer and tray growth.');

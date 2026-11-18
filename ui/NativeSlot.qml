@@ -10,7 +10,9 @@ BarWidget {
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen ? root.QsWindow.window.screen.name:""
   readonly property string mode:telemetry?telemetry.modeFor(monitorName):"full"
   visible:mode==="full" && (role==="clock" || !telemetry || (role==="plugins" ? (telemetry.settings.showPlugins && telemetry.pluginVisible(moduleName)) : telemetry.settings.showConnections))
-  implicitWidth:content.item && content.item.visible ? content.item.implicitWidth:0
+  readonly property bool collapsed: !!telemetry && role!=="clock" && telemetry.compactFor(monitorName)
+  opacity: collapsed ? 0 : 1
+  implicitWidth: collapsed ? 0 :content.item && content.item.visible ? content.item.implicitWidth:0
   implicitHeight:barSize
   readonly property bool opened:!!content.item && content.item.opened===true
   function open(){if(content.item && content.item.open)content.item.open()}

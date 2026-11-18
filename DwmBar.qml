@@ -22,6 +22,7 @@ OmarchyBar.Bar {
   property var inheritedRegistry: null
   Services.Telemetry {
     id: sharedTelemetry
+    extraCount:root.configuredExtras.length
     shell: root.shell
   }
 
@@ -33,6 +34,7 @@ OmarchyBar.Bar {
   Component { id: divider; Divider.Divider { telemetry: sharedTelemetry } }
   Component { id: tray; Tray.Tray { telemetry: sharedTelemetry } }
 
+  Component { id: overflow; Ui.Overflow { telemetry:sharedTelemetry; pluginEntries:root.configuredExtras; onLaunch:function(id,monitor){var items=root.moduleWidgets(id);for(var i=0;i<items.length;i++)if(items[i].monitorName===monitor){items[i].open();return}} } }
   Component { id: settings; Ui.Settings { telemetry: sharedTelemetry; pluginEntries:root.configuredExtras } }
   Component { id: clock; Ui.NativeSlot { telemetry: sharedTelemetry; role:"clock"; sourceComponent: root.nativeComponent("omarchy.clock") } }
   Component { id: network; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.network") } }
@@ -52,10 +54,22 @@ OmarchyBar.Bar {
   }
   ShellIpc {
     target:"dwm.bar.ui"
+    function control(id:string):bool {
+      var allowed=["omarchy.network","omarchy.bluetooth","omarchy.audio","omarchy.power","omarchy.agents"]
+      for(var n=0;n<root.configuredExtras.length;n++)allowed.push(root.configuredExtras[n].id)
+      if(allowed.indexOf(id)<0)return false
+      var items=root.moduleWidgets(id),focused=Hyprland.focusedMonitor
+      for(var i=0;i<items.length;i++)if(!focused || items[i].monitorName===focused.name){items[i].open();return true}
+      return false
+    }
+    function overflow():void {
+      var items=root.moduleWidgets("dwm.overflow"),focused=Hyprland.focusedMonitor
+      for(var i=0;i<items.length;i++)if(!focused || items[i].monitorName===focused.name){items[i].open();return}
+    }
     function state():string {
       var result=[]
-      for(var n=0;n<2;n++) {
-        var id=n===0?"dwm.settings":"dwm.music",items=root.moduleWidgets(id)
+      for(var n=0;n<3;n++) {
+        var id=n===0?"dwm.settings":n===1?"dwm.music":"dwm.overflow",items=root.moduleWidgets(id)
         for(var i=0;i<items.length;i++)result.push({id:id,monitor:items[i].monitorName,opened:items[i].opened})
       }
       return JSON.stringify(result)
@@ -67,7 +81,7 @@ OmarchyBar.Bar {
       if(items.length)items[0].open()
     }
     function close():void {
-      var ids=["dwm.music","dwm.settings"]
+      var ids=["dwm.music","dwm.settings","dwm.overflow"]
       for(var n=0;n<ids.length;n++){var items=root.moduleWidgets(ids[n]);for(var i=0;i<items.length;i++)items[i].close()}
     }
     function music():void {
@@ -86,6 +100,7 @@ OmarchyBar.Bar {
     "dwm.indicators": indicators,
     "dwm.divider": divider,
     "dwm.tray": tray,
+    "dwm.overflow":overflow,
     "dwm.settings":settings
   })
 
@@ -141,7 +156,7 @@ OmarchyBar.Bar {
         {id: "omarchy.network"}, {id: "omarchy.bluetooth"},
         {id: "omarchy.audio"}, {id: "omarchy.power"},
         {id: "omarchy.keyboard-layout"}
-      ].concat(configuredExtras, [{id:"dwm.tray"}, {id:"dwm.settings"}])
+      ].concat(configuredExtras, [{id:"dwm.tray"}, {id:"dwm.overflow"}, {id:"dwm.settings"}])
     })
     barConfigSerial++
   }
