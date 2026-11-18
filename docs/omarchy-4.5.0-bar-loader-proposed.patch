@@ -1,0 +1,42 @@
+--- a/shell/shell.qml
++++ b/shell/shell.qml
+@@ -253,21 +253,35 @@
+ 
+   Loader {
+     id: defaultBarLoader
++    property var configuredBar: null
+ 
+     active: shell.activeBarId === shell.defaultBarId
+     sourceComponent: defaultBarComponent
+-    onLoaded: shell.configureBar(item, shell.barManifestFor(shell.defaultBarId))
+-    onActiveChanged: if (!active && shell.activeBarId !== shell.defaultBarId) shell.bar = null
++    onLoaded: {
++      configuredBar = item
++      shell.configureBar(item, shell.barManifestFor(shell.defaultBarId))
++    }
++    onActiveChanged: if (!active) {
++      if (shell.bar === configuredBar) shell.bar = null
++      configuredBar = null
++    }
+   }
+ 
+   Loader {
+     id: pluginBarLoader
++    property var configuredBar: null
+ 
+     active: !shell.pluginReloading && shell.activeBarId !== shell.defaultBarId && shell.activeBarSourceUrl !== ""
+     source: shell.activeBarId !== shell.defaultBarId ? shell.activeBarSourceUrl : ""
+     asynchronous: true
+-    onLoaded: shell.configureBar(item, shell.activeBarManifest)
+-    onActiveChanged: if (!active) shell.bar = null
++    onLoaded: {
++      configuredBar = item
++      shell.configureBar(item, shell.activeBarManifest)
++    }
++    onActiveChanged: if (!active) {
++      if (shell.bar === configuredBar) shell.bar = null
++      configuredBar = null
++    }
+     onStatusChanged: {
+       if (status === Loader.Error) {
+         console.warn("bar option " + shell.activeBarId + " failed to load, falling back to " + shell.defaultBarId)

@@ -23,7 +23,7 @@ omarchy bar use omarchy.bar
 omarchy bar use anky.dwm-bar
 ```
 
-The original `bar.layout`, idle settings and unrelated plugins remain in `shell.json`. Enabling this plugin selects `bar.id`; the plugin supplies its own layout at runtime. To remove it, first select `omarchy.bar`, then run `omarchy plugin remove anky.dwm-bar`.
+The original `bar.layout`, idle settings and unrelated plugins remain in `shell.json`. Enabling this plugin selects `bar.id`; the plugin supplies its own layout at runtime. To remove it on the tested Omarchy version, switch to the stock bar and restart the shell before removal; see the removal workaround below.
 
 ## Layout
 
@@ -228,3 +228,19 @@ One shared palette watches the theme file for all outputs. Settings, music and d
 Closing the music panel cancels queued artwork requests and discards their results. An already-running fetch can finish within its existing network limits. Unrelated settings changes no longer reload the same cover. Cava stops and is reaped on close, pause or shutdown. The persistent worker closes inherited descriptors above stderr at startup so shell graphics handles are not retained by the reader.
 
 A local 20-cycle panel test found shell file descriptors stable at 219 and no steady RSS growth after warm-up. After descriptor cleanup, a further 10-cycle test left the worker with only stdin/stdout/stderr and no children after panel close. These short observations do not prove the absence of long-term leaks, and shell memory includes all loaded plugins. One persistent worker remains intentional: replacing it with repeated Python launches would add overhead.
+
+## Removal workaround on Omarchy 4.5.0-3
+
+The host can select the stock bar but clear its live bar reference during a custom-to-stock transition. This was reproduced with the same disable IPC used by `omarchy plugin remove`: `omarchy.bar` became active, while `debugBarGeometry` returned an empty list. Restarting the shell with stock selected restored normal geometry.
+
+Use:
+
+```bash
+omarchy bar use omarchy.bar
+omarchy restart shell
+omarchy plugin remove anky.dwm-bar
+```
+
+Or run `bash ~/.config/omarchy/plugins/anky.dwm-bar/scripts/uninstall.sh`. The helper preserves Omarchy's removal confirmation. Preferences are separate from the plugin directory.
+
+This is a workaround, not an automatic repair of Omarchy's remove command. A proposed ownership-guard patch for the host loaders is saved in `docs/omarchy-4.5.0-bar-loader-proposed.patch` for upstream review. It has not been applied or runtime-tested; packaged `/usr/share/omarchy` files are unchanged. Plugin destruction hooks are deliberately not used, since they also run during updates and ordinary bar switches.
