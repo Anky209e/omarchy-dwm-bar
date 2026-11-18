@@ -1,5 +1,7 @@
 # Omarchy DWM Bar
 
+![Omarchy DWM Bar desktop showcase](docs/screenshots/showcase.png)
+
 One Omarchy shell plugin for the complete dwm-style top bar. Workspaces, layout switching, music, text metrics, temperature, state controls and a flat system tray are bundled together. No companion plugins, installer script, layout copying or separate tray installation.
 
 ## Install
