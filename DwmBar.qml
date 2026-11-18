@@ -33,7 +33,7 @@ OmarchyBar.Bar {
   Component { id: divider; Divider.Divider { telemetry: sharedTelemetry } }
   Component { id: tray; Tray.Tray { telemetry: sharedTelemetry } }
 
-  Component { id: settings; Ui.Settings { telemetry: sharedTelemetry } }
+  Component { id: settings; Ui.Settings { telemetry: sharedTelemetry; pluginEntries:root.configuredExtras } }
   Component { id: clock; Ui.NativeSlot { telemetry: sharedTelemetry; role:"clock"; sourceComponent: root.nativeComponent("omarchy.clock") } }
   Component { id: network; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.network") } }
   Component { id: bluetooth; Ui.NativeSlot { telemetry: sharedTelemetry; sourceComponent: root.nativeComponent("omarchy.bluetooth") } }
@@ -52,6 +52,14 @@ OmarchyBar.Bar {
   }
   ShellIpc {
     target:"dwm.bar.ui"
+    function state():string {
+      var result=[]
+      for(var n=0;n<2;n++) {
+        var id=n===0?"dwm.settings":"dwm.music",items=root.moduleWidgets(id)
+        for(var i=0;i<items.length;i++)result.push({id:id,monitor:items[i].monitorName,opened:items[i].opened})
+      }
+      return JSON.stringify(result)
+    }
     function settings():void {
       var items=root.moduleWidgets("dwm.settings")
       var focused=Hyprland.focusedMonitor

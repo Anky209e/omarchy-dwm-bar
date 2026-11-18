@@ -23,6 +23,7 @@ subprocess.run(['omarchy', 'plugin', 'validate', str(repo)], check=True)
 print('Validated: one root bar manifest, no companion installs, bundled licensed tray.', flush=True)
 env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
 subprocess.run(['node', 'tests/parsers.test.js'], cwd=repo, env=env, check=True)
+subprocess.run(['node', 'tests/colors.test.js'], cwd=repo, env=env, check=True)
 subprocess.run(['node', 'tests/bar.test.js'], cwd=repo, env=env, check=True)
 subprocess.run([sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py', '-v'], cwd=repo, env=env, check=True)
 if args.runtime:

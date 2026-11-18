@@ -57,7 +57,7 @@ console.log('Single-plugin checks passed: self-contained layout, preserved prior
 
 // There remains one shared service, and no status widget owns a reader.
 assert.equal((source.match(/Services\.Telemetry\s*\{/g) || []).length, 1);
-assert(source.includes('Ui.Settings { telemetry: sharedTelemetry }'));
+assert(source.includes('Ui.Settings { telemetry: sharedTelemetry;'));
 assert(source.includes('Ui.NativeSlot { telemetry: sharedTelemetry'));
 for (const file of ['status/Status.qml','temperature/Temperature.qml','indicators/Indicators.qml']) {
   const widget = fs.readFileSync(path.join(repo, 'widgets', file), 'utf8');
@@ -79,7 +79,7 @@ console.log('Shared-worker checks passed: one persistent backend, no per-monitor
 
 const musicPanel=fs.readFileSync(path.join(repo,'widgets/music/Music.qml'),'utf8');
 for(const symbol of ['⏮','⏭','▶','Ⅱ','♫'])assert(!musicPanel.includes(symbol),'UI should use Nerd Font icons: '+symbol);
-assert(musicPanel.includes('component TransportButton: Button'));
+assert(musicPanel.includes('component TransportButton: StateButton'));
 const settingsPanel=fs.readFileSync(path.join(repo,'ui/Settings.qml'),'utf8');
 assert(!settingsPanel.includes('gameClasses'));
 assert(settingsPanel.includes('key:"gameMode"'));

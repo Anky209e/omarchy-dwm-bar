@@ -9,7 +9,7 @@ import "TelemetryModel.js" as Model
 Item {
   id: root
   property var shell: null
-  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{}})
+  property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{},hiddenPlugins:[]})
   property var hardware: ({total:0,idle:0,cpu:-1,ram:-1})
   property var gpu: ({available:false,gpu:-1,temperature:-1})
   property string fastState: "loading"
@@ -17,6 +17,7 @@ Item {
   property real fastAt: 0
   property real gpuAt: 0
   property real now: Date.now()
+  property double savedAt: 0
   property bool settingsError: false
   property bool settingsReady: false
   property int fastRequests: 0
@@ -55,6 +56,15 @@ Item {
 
   function send(message) { if(worker.running) worker.write(JSON.stringify(message)+"\n") }
   function save(patch) { send({command:"settings",patch:patch}) }
+  function pluginVisible(name) { return (settings.hiddenPlugins || []).indexOf(name)<0 }
+  function togglePlugin(name) {
+    var next=(settings.hiddenPlugins || []).slice(), at=next.indexOf(name)
+    if(at<0)next.push(name);else next.splice(at,1)
+    save({hiddenPlugins:next})
+  }
+  function resetAppearance() {
+    save({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,hiddenPlugins:[]})
+  }
   function modeFor(name) { return settings.monitors[name] || settings.monitorDefault || "full" }
   function setMonitor(name,mode) {
     var next={};for(var key in settings.monitors)next[key]=settings.monitors[key]
@@ -88,7 +98,7 @@ Item {
     try {
       var data=JSON.parse(line)
       if(data.event==="settings") {
-        settings=data.values;settingsReady=true;settingsError=false;syncWorker();if(musicOpen)requestArt()
+        settings=data.values;settingsReady=true;settingsError=false;savedAt=Date.now();syncWorker();if(musicOpen)requestArt()
       } else if(data.event==="settingsError")settingsError=true
       else if(data.event==="hardware") {
         fastState=data.status;fastRequests=Number(data.count)||0
@@ -114,10 +124,11 @@ Item {
     stdinEnabled:true
     running:true
     stdout:SplitParser { onRead:function(line){root.apply(line)} }
-    onStarted: { root.restartCount=0;root.syncWorker() }
+    onStarted: { root.syncWorker() }
     onExited: { root.fastState="error";root.gpuState="error";root.restartCount++;restart.interval=Math.min(30000,1000*Math.pow(2,Math.min(5,root.restartCount)));restart.restart() }
   }
   Timer { id:restart;onTriggered:worker.running=true }
+  Timer { interval:30000; running:worker.running; onTriggered:root.restartCount=0 }
   Timer { interval:1000;running:true;repeat:true;onTriggered:root.now=Date.now() }
   Process { id:recordingRead;command:["omarchy-capture-screenrecording","--status"];onExited:function(code){root.recording=code===0} }
   Process { id:recordAction;onExited:Qt.callLater(root.refreshRecording) }

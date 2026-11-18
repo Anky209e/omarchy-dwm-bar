@@ -31,6 +31,12 @@ class PreferencesTests(unittest.TestCase):
         self.assertEqual(values['monitors'], {'eDP-1': 'minimal'})
         self.assertGreaterEqual(preferences.normalize({'tempWarm': 100, 'tempHot': 50})['tempHot'], 100)
 
+    def test_hidden_plugins_are_bounded_and_plain_identifiers(self):
+        value=preferences.normalize({'hiddenPlugins':['omarchy.agents','crmne.hyprmoncfg','omarchy.agents','<img src=x>',None,'a'*129]})
+        self.assertEqual(value['hiddenPlugins'], ['omarchy.agents','crmne.hyprmoncfg'])
+        self.assertEqual(preferences.normalize({'hiddenPlugins':'omarchy.agents'})['hiddenPlugins'], [])
+        self.assertEqual(len(preferences.normalize({'hiddenPlugins':['plugin.'+str(i) for i in range(100)]})['hiddenPlugins']),64)
+
     def test_atomic_save_and_backup(self):
         with tempfile.TemporaryDirectory(prefix='dwm-preferences-') as directory:
             path = Path(directory) / 'settings.json'

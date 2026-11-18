@@ -25,7 +25,7 @@ BarWidget {
     fixedHeight: root.barSize
     horizontalMargin: 1
     pressScale: 1
-    text: root.sensorStatus==="sleep"?strings.t("stateValue").arg("SLP"):root.sensorStatus==="error"?strings.t("stateValue").arg("ERR"):root.sensorStatus==="missing" || root.sensorStatus==="unknown"?strings.t("stateValue").arg("N/A"):root.sensorStatus==="stale"?strings.t("stateValue").arg("…"):root.temperature<0?strings.t("unavailable"):strings.t("temperature").arg(Commons.I18n.formatNumber(root.temperature))
+    text: root.sensorStatus==="paused"?strings.t("stateValue").arg("PAU"):root.sensorStatus==="sleep"?strings.t("stateValue").arg("SLP"):root.sensorStatus==="error"?strings.t("stateValue").arg("ERR"):root.sensorStatus==="missing" || root.sensorStatus==="unknown"?strings.t("stateValue").arg("N/A"):root.sensorStatus==="stale"?strings.t("stateValue").arg("…"):root.temperature<0?strings.t("unavailable"):strings.t("temperature").arg(Commons.I18n.formatNumber(root.temperature))
     foreground: root.sensorStatus==="error"?themePalette.red:root.sensorStatus!=="ok" || root.temperature<0?themePalette.muted : root.temperature >= (root.telemetry?root.telemetry.settings.tempHot:85) ? themePalette.red : root.temperature >= (root.telemetry?root.telemetry.settings.tempWarm:75) ? themePalette.yellow : themePalette.cyan
     tooltipText: strings.t("state."+root.sensorStatus)
     onPressed: function(button) {

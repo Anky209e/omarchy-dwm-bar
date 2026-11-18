@@ -21,7 +21,15 @@ BarWidget {
     fixedWidth: Style.bar.statusSlot
     fixedHeight: root.barSize
     pressScale: 1
-    foreground: themePalette.muted
+    foreground: Commons.Color.bar.text
+    opacity: active ? 1 : 0.6
+    Rectangle {
+      anchors.bottom: parent.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      width: Style.space(12); height: Style.space(2)
+      visible: parent.active
+      color: parent.activeColor
+    }
   }
   Row {
     id: row

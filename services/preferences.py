@@ -11,7 +11,7 @@ DEFAULTS = {
     'remoteArtwork': False, 'showCpu': True, 'showRam': True, 'showGpu': True,
     'showVolume': True, 'showTemperature': True, 'showIndicators': True,
     'showTray': True, 'showConnections': True, 'showMusic': True, 'showPlugins': True,
-    'monitorDefault': 'full', 'monitors': {},
+    'monitorDefault': 'full', 'monitors': {}, 'hiddenPlugins': [],
 }
 RANGES = {'fastInterval': (1, 30), 'gpuInterval': (2, 120), 'cpuWarn': (1, 100),
           'ramWarn': (1, 100), 'gpuWarn': (1, 100), 'tempWarm': (30, 110),
@@ -31,6 +31,8 @@ def normalize(raw):
                 result[key] = int(value)
         elif isinstance(default, bool):
             if isinstance(value, bool): result[key] = value
+        elif key == 'hiddenPlugins' and isinstance(value, list):
+            result[key] = list(dict.fromkeys(item for item in value[:64] if isinstance(item, str) and 0 < len(item) <= 128 and all(c.isalnum() or c in '.-_' for c in item)))
         elif key == 'monitorDefault' and value in MODES:
             result[key] = value
         elif key == 'monitors' and isinstance(value, dict):

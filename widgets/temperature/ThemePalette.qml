@@ -6,13 +6,29 @@ import qs.Commons as Commons
 QtObject {
   id: root
   property var values: ({})
-  readonly property color green: values.green || values.color2 || Commons.Color.accent
-  readonly property color blue: values.blue || values.color4 || Commons.Color.accent
-  readonly property color magenta: values.magenta || values.color5 || Commons.Color.accent
-  readonly property color cyan: values.cyan || values.color6 || Commons.Color.accent
-  readonly property color yellow: values.yellow || values.color3 || Commons.Color.accent
-  readonly property color red: values.red || values.color1 || Commons.Color.urgent
-  readonly property color muted: values.dark_foreground || values.color8 || Commons.Color.muted
+  readonly property color green: readable(values.green || values.color2 || Commons.Color.accent)
+  readonly property color blue: readable(values.blue || values.color4 || Commons.Color.accent)
+  readonly property color magenta: readable(values.magenta || values.color5 || Commons.Color.accent)
+  readonly property color cyan: readable(values.cyan || values.color6 || Commons.Color.accent)
+  readonly property color yellow: readable(values.yellow || values.color3 || Commons.Color.accent)
+  readonly property color red: readable(values.red || values.color1 || Commons.Color.urgent)
+  readonly property color muted: readable(values.dark_foreground || values.color8 || Commons.Color.muted)
+  function luminance(c) {
+    function channel(v) { return v <= 0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4) }
+    return 0.2126*channel(c.r)+0.7152*channel(c.g)+0.0722*channel(c.b)
+  }
+  function readable(value) {
+    var c=Qt.tint(value, "transparent"), bg=Commons.Color.background
+    var a=luminance(c), b=luminance(bg)
+    if((Math.max(a,b)+0.05)/(Math.min(a,b)+0.05)>=4.5)return c
+    var target=b<0.179?Qt.rgba(1,1,1,1):Qt.rgba(0,0,0,1)
+    for(var i=1;i<=20;i++) {
+      var t=i/20, mixed=Qt.rgba(c.r+(target.r-c.r)*t,c.g+(target.g-c.g)*t,c.b+(target.b-c.b)*t,1)
+      var l=luminance(mixed)
+      if((Math.max(l,b)+0.05)/(Math.min(l,b)+0.05)>=4.5)return mixed
+    }
+    return target
+  }
   function parse(raw) {
     var next = {}
     var lines = String(raw).slice(0, 65536).split("\n")

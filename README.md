@@ -163,3 +163,24 @@ The default check validates the single root manifest, bundled assets, numeric pa
 ## License
 
 MIT. Workspace code derives from Omarchy. Flat Tray is vendored from [WhiteWebDev/omarchy-flat-tray](https://github.com/WhiteWebDev/omarchy-flat-tray) with its license preserved. See [NOTICE](NOTICE), [LICENSE](LICENSE) and [the tray license](widgets/tray/LICENSE).
+
+## Polish and accessibility (2.4)
+
+Active idle/night-light/recording/DND controls have a colored underline as well as a brighter glyph. Playing music has a matching indicator. Theme-derived sensor colors are adjusted to a minimum 4.5:1 contrast against the theme background. Selected panel controls have an accent fill and marker; disabled controls stay dimmed.
+
+Settings and music buttons support Tab / Shift+Tab and Enter / Space. Escape dismisses these panels. Music width adapts per output. Settings → Widgets includes individual configured add-ons, preserving their original configuration and native panels. Settings save automatically; failures remain visible. Reset appearance requires a second click and preserves monitor profiles, Game mode and remote artwork permission.
+
+### Updating and rollback
+
+Install with `omarchy plugin install https://github.com/Anky209e/omarchy-dwm-bar`. Validate a checkout with `python -B scripts/check.py`; add `--runtime` to inspect the active shell. Updates must preserve `~/.config/omarchy/dwm-bar.json` and the existing `shell.json` layout. Keep a copy of these files before changing versions. To roll back a Git installation, check out a known working commit in the installed plugin directory and run `omarchy restart shell`.
+
+### Manual release checks
+
+- Open Agents and monitor configuration on each output; check click targets and native panels.
+- Open settings and music using IPC; Tab through controls, activate with Space, dismiss with Escape.
+- Pause/play, change players, remove the audio device, and reconnect it.
+- Suspend/resume and unplug/reconnect the external display; confirm one shared worker and fresh readings.
+- Test full/minimal/hidden profiles and themes with light and dark backgrounds.
+- Enable Game mode; automatic hardware requests must stop while volume and music remain usable.
+
+Full-bar third-party service access follows the installed Omarchy host API. This plugin does not grant additional service permissions. Very narrow outputs and very large trays may still need a Minimal profile; a general overflow drawer is not implemented.

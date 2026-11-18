@@ -21,11 +21,11 @@ BarWidget {
   readonly property string artist:player?String(player.trackArtist || "").slice(0,256):""
   readonly property string album:player?String(player.trackAlbum || "").slice(0,256):""
   visible:!telemetry || (telemetry.modeFor(monitorName)!=="hidden" && telemetry.settings.showMusic)
-  implicitWidth:Style.space(Math.min(telemetry?telemetry.settings.musicWidth:240,screen && screen.width<1800?210:480))
+  implicitWidth:Math.max(Style.space(64), Math.min(Style.space(telemetry?telemetry.settings.musicWidth:240), screen ? screen.width * 0.14 : Style.space(240)))
   implicitHeight:barSize
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
   ThemePalette {id:themePalette}
-  component TransportButton: Button {
+  component TransportButton: StateButton {
     property bool primary: false
     width: Style.space(primary ? 64 : 44)
     height: Style.space(44)
@@ -51,27 +51,31 @@ BarWidget {
     bar:root.bar;text:"music";labelVisible:false;pressScale:1
     tooltipText:strings.t("hint")
     onPressed:function(mouseButton){if(mouseButton===Qt.RightButton)root.playPause();else if(mouseButton===Qt.MiddleButton){if(root.player && root.player.canGoNext)root.player.next()}else root.opened=!root.opened}
+    Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:Style.space(2); visible:root.playing || root.opened; color:root.playing?themePalette.green:Commons.Color.accent }
     Text {
       anchors.fill:parent;anchors.leftMargin:Style.space(6);anchors.rightMargin:Style.space(6)
       verticalAlignment:Text.AlignVCenter;textFormat:Text.PlainText;elide:Text.ElideRight
       text:(root.playing?"󰐊 ":"󰝚 ")+(root.artist?strings.t("track").arg(root.title).arg(root.artist):root.title)
-      color:root.playing?Commons.Color.accent:themePalette.muted
+      color:root.playing?themePalette.green:Commons.Color.bar.text
+      opacity:root.playing?1:0.7
       font.family:Style.font.family;font.pixelSize:Style.font.body
     }
   }
   KeyboardPanel {
     id:panel
+    focusTarget: column
     anchorItem:button;owner:root;bar:root.bar;open:root.opened
     contentWidth:Style.space(400)
     contentHeight:fittedContentHeight(column.implicitHeight)
     Column {
       id:column
+      Keys.onEscapePressed: root.close()
       width:parent.width
       spacing:Style.space(12)
       Row {
         width:parent.width
         PlainLabel {width:parent.width-Style.space(36);anchors.verticalCenter:parent.verticalCenter;text:strings.t("nowPlaying");font.pixelSize:Style.font.title;font.bold:true}
-        Button {width:Style.space(32);height:Style.space(30);horizontalPadding:0;verticalPadding:0;iconText:"󰅖";tooltipText:strings.t("close");onClicked:root.close()}
+        StateButton {width:Style.space(32);height:Style.space(30);horizontalPadding:0;verticalPadding:0;iconText:"󰅖";tooltipText:strings.t("close");onClicked:root.close()}
       }
       Row {
         width:parent.width;spacing:Style.space(12)
@@ -164,7 +168,7 @@ BarWidget {
       PlainLabel {visible:root.telemetry && root.telemetry.players.length>1;text:strings.t("players");font.bold:true}
       Repeater {
         model:root.telemetry?root.telemetry.players.slice(0,8):[]
-        Button {
+        StateButton {
           required property var modelData
           width:parent.width
           iconText:"󰀻"
@@ -176,7 +180,7 @@ BarWidget {
       Row {
         width:parent.width
         spacing:Style.space(8)
-        Button {
+        StateButton {
           width:(parent.width-Style.space(8))/2
           iconText:"󰺢"
           text:strings.t("visualizer")
@@ -184,7 +188,7 @@ BarWidget {
           selected:root.telemetry && root.telemetry.settings.visualizer
           onClicked:root.telemetry.save({visualizer:!root.telemetry.settings.visualizer})
         }
-        Button {
+        StateButton {
           width:(parent.width-Style.space(8))/2
           iconText:"󰋩"
           text:strings.t("artwork")

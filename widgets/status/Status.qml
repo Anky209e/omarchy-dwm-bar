@@ -14,7 +14,7 @@ BarWidget {
   readonly property string fastStatus:telemetry?telemetry.hardwareStatus:"loading"
   readonly property string gpuStatus:telemetry?telemetry.gpuStatus:"loading"
   function valueText(key,value,status){
-    var code=status==="error"?"ERR":status==="sleep"?"SLP":status==="missing" || status==="unknown"?"N/A":status==="stale"?"…":value<0?"—":""
+    var code=status==="paused"?"PAU":status==="error"?"ERR":status==="sleep"?"SLP":status==="missing" || status==="unknown"?"N/A":status==="stale"?"…":value<0?"—":""
     return code?strings.t("sensorState").arg(strings.t("label."+key)).arg(code):strings.t(key).arg(Commons.I18n.formatNumber(value))
   }
   function statusHint(status){return strings.t("state."+status)}
@@ -73,7 +73,7 @@ BarWidget {
       visible:root.prefs.showGpu
       reservedText: strings.t("gpu").arg(Commons.I18n.formatNumber(100))
       text: root.valueText("gpu",root.gpu,root.gpuStatus)
-      foreground: root.gpuStatus==="error" ? themePalette.red : root.gpuStatus!=="ok" || !root.gpuAvailable ? themePalette.muted : root.gpu >= root.prefs.gpuWarn ? themePalette.yellow : themePalette.magenta
+      foreground: root.gpuStatus==="error" ? themePalette.red : root.gpuStatus!=="ok" || !root.gpuAvailable ? themePalette.muted : root.gpu >= root.prefs.gpuWarn ? themePalette.red : themePalette.magenta
       tooltipText: root.statusHint(root.gpuStatus)
       onPressed: function(button) { root.monitor(button, "nvtop") }
     }
