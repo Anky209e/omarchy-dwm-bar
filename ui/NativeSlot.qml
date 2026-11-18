@@ -14,7 +14,13 @@ BarWidget {
   opacity: collapsed ? 0 : 1
   // Effective visibility depends on the host slot having a nonzero width.
   // Checking it here creates a zero-width/hidden feedback loop at startup.
-  implicitWidth: collapsed ? 0 : content.item ? content.item.implicitWidth : 0
+  // The native keyboard widget hides its label for a single layout, but its
+  // implicit width still includes padding. Use its content state, not effective
+  // visibility (which would reintroduce the startup sizing feedback loop).
+  readonly property bool keyboardHasContent: moduleName!=="omarchy.keyboard-layout" || !content.item
+    || !("inputLabel" in content.item) || !("multipleLayouts" in content.item)
+    || (content.item.inputLabel!=="" && (content.item.multipleInputs || (content.item.layoutLabel!=="" && content.item.multipleLayouts)))
+  implicitWidth: collapsed || !keyboardHasContent ? 0 : content.item ? content.item.implicitWidth : 0
   implicitHeight:barSize
   readonly property bool opened:!!content.item && content.item.opened===true
   function open(){if(content.item && content.item.open)content.item.open()}
