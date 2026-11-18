@@ -55,7 +55,7 @@ OmarchyBar.Bar {
   ShellIpc {
     target:"dwm.bar.ui"
     function control(id:string):bool {
-      var allowed=["omarchy.network","omarchy.bluetooth","omarchy.audio","omarchy.power","omarchy.agents"]
+      var allowed=["omarchy.network","omarchy.bluetooth","omarchy.audio","omarchy.power","omarchy.agents","omarchy.keyboard-layout"]
       for(var n=0;n<root.configuredExtras.length;n++)allowed.push(root.configuredExtras[n].id)
       if(allowed.indexOf(id)<0)return false
       var items=root.moduleWidgets(id),focused=Hyprland.focusedMonitor

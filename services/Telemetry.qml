@@ -79,6 +79,15 @@ Item {
     for (var j=0;j<players.length;j++) if(players[j].trackTitle) return players[j]
     return players.length ? players[0] : null
   }
+  property var keyboards: ({})
+  function reportKeyboard(name,state) {
+    if(!name)return
+    var previous=keyboards[name]
+    if(state && previous && previous.label===state.label && previous.available===state.available)return
+    var next={};for(var key in keyboards)if(key!==name)next[key]=keyboards[key]
+    if(state)next[name]=state
+    keyboards=next
+  }
   property var musicUsers: ({})
   readonly property bool musicOpen: Object.keys(musicUsers).length>0
   readonly property bool visualizerWanted: musicOpen && !!player && player.isPlaying && settings.visualizer && !hardwarePaused

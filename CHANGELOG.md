@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.4
+
+- Hide empty drawers when all corner controls are disabled, and omit empty application-tray headings.
+- Add compact-mode native keyboard layout/input-method switching with live per-output labels and no additional polling.
+- Keep single-layout keyboard slots collapsed.
+
 ## 2.6.3
 
 - Follow hyprmoncfg global workspace numbering without duplicate wrapped labels; preserve existing windows and monitor-local behavior when no global plan is active.

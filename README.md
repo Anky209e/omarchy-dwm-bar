@@ -250,3 +250,5 @@ This is a workaround, not an automatic repair of Omarchy's remove command. A pro
 ## Workspace-plan compatibility
 
 The bar follows hyprmoncfg's generated global workspace plan when it disables Omarchy's monitor-local numbering. Global tags use their real workspace IDs; workspaces above 10 are not wrapped into duplicate 1–0 labels. Existing windows in old workspace IDs remain accessible and are not moved automatically. Without a global plan, the original per-monitor blocks remain in use. This detection only reads the generated configuration; it never changes keybindings or workspace rules.
+
+Compact mode keeps keyboard switching available in the drawer when multiple layouts or input methods are active. Its label follows the native keyboard widget and the action uses the same native switching logic, without a second polling process. A single-layout setup has no keyboard button or reserved slot. The drawer itself disappears when all corner groups are disabled and no eligible tray/add-on content remains.

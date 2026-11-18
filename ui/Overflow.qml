@@ -1,10 +1,12 @@
 import QtQuick
 import QtQuick.Controls as QQC
 import Quickshell
+import Quickshell.Services.SystemTray
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "../widgets/tray" as Tray
+import "../widgets/tray/TrayModel.js" as TrayModel
 
 BarWidget {
   id:root
@@ -14,11 +16,20 @@ BarWidget {
   property bool opened:false
   signal launch(string id,string monitor)
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
-  visible:telemetry && telemetry.modeFor(monitorName)==="full" && telemetry.compactFor(monitorName)
+  readonly property var keyboard:telemetry && telemetry.keyboards[monitorName] ? telemetry.keyboards[monitorName] : ({available:false,label:""})
+  readonly property var extraControls:telemetry && telemetry.settings.showPlugins?pluginEntries.filter(function(e){return telemetry.pluginVisible(e.id)}):[]
+  readonly property bool hasTrayItems: {
+    if(!telemetry || !telemetry.settings.showTray)return false
+    var items=SystemTray.items.values
+    for(var i=0;i<items.length;i++)if(items[i].status!==Status.Passive && !TrayModel.ownedByOmarchy(items[i],root.bar?root.bar.layoutConfig:null))return true
+    return false
+  }
+  readonly property bool hasControls:!!telemetry && (telemetry.settings.showIndicators || telemetry.settings.showConnections || extraControls.length>0 || hasTrayItems)
+  visible:telemetry && telemetry.modeFor(monitorName)==="full" && telemetry.compactFor(monitorName) && hasControls
   readonly property int openPanelIndicatorWidth:Style.space(12)
   implicitWidth:Style.bar.statusSlot
   implicitHeight:barSize
-  function open(){opened=true}
+  function open(){if(visible)opened=true}
   function close(){opened=false}
   onVisibleChanged:if(!visible)close()
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
@@ -73,8 +84,16 @@ BarWidget {
           }
         }
       }
+      StateButton {
+        visible:root.telemetry && root.telemetry.settings.showConnections && root.keyboard.available
+        width:parent.width
+        iconText:"󰌌"
+        text:strings.t("keyboard").arg(root.keyboard.label)
+        tooltipText:strings.t("keyboardHelp")
+        onClicked:root.launch("omarchy.keyboard-layout",root.monitorName)
+      }
       Repeater {
-        model:(root.telemetry && root.telemetry.settings.showConnections?[{id:"omarchy.network",label:strings.t("network")},{id:"omarchy.bluetooth",label:"Bluetooth"},{id:"omarchy.audio",label:strings.t("audio")},{id:"omarchy.power",label:strings.t("power")}]:[]).concat(root.telemetry && root.telemetry.settings.showPlugins?root.pluginEntries.filter(function(e){return root.telemetry.pluginVisible(e.id)}):[])
+        model:(root.telemetry && root.telemetry.settings.showConnections?[{id:"omarchy.network",label:strings.t("network")},{id:"omarchy.bluetooth",label:"Bluetooth"},{id:"omarchy.audio",label:strings.t("audio")},{id:"omarchy.power",label:strings.t("power")}]:[]).concat(root.extraControls)
         StateButton {
           required property var modelData
           width:parent.width
@@ -82,7 +101,7 @@ BarWidget {
           onClicked:{root.close();root.launch(modelData.id,root.monitorName)}
         }
       }
-      PlainLabel {visible:root.telemetry && root.telemetry.settings.showTray;text:strings.t("trayItems");font.bold:true}
+      PlainLabel {visible:root.hasTrayItems;text:strings.t("trayItems");font.bold:true}
       Tray.Tray {bar:root.bar;telemetry:root.telemetry;inDrawer:true;settings:({});width:Math.min(implicitWidth,column.width);height:implicitHeight}
     }
     }

@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Ui
+import qs.Commons
 
 BarWidget {
   id:root
@@ -20,10 +21,26 @@ BarWidget {
   readonly property bool keyboardHasContent: moduleName!=="omarchy.keyboard-layout" || !content.item
     || !("inputLabel" in content.item) || !("multipleLayouts" in content.item)
     || (content.item.inputLabel!=="" && (content.item.multipleInputs || (content.item.layoutLabel!=="" && content.item.multipleLayouts)))
+  readonly property bool keyboardAvailable: moduleName==="omarchy.keyboard-layout" && !!content.item && keyboardHasContent
+  readonly property string keyboardLabel: moduleName==="omarchy.keyboard-layout" && content.item && "inputLabel" in content.item ? String(content.item.inputLabel).slice(0,32) : ""
+  function reportKeyboard() {
+    if(telemetry && moduleName==="omarchy.keyboard-layout")telemetry.reportKeyboard(monitorName,{available:keyboardAvailable,label:keyboardLabel})
+  }
+  onKeyboardAvailableChanged:reportKeyboard()
+  onKeyboardLabelChanged:reportKeyboard()
+  onMonitorNameChanged:reportKeyboard()
+  onModuleNameChanged: {inject();reportKeyboard()}
+  Component.onCompleted:reportKeyboard()
+  Component.onDestruction:if(telemetry && moduleName==="omarchy.keyboard-layout")telemetry.reportKeyboard(monitorName,null)
   implicitWidth: collapsed || !keyboardHasContent ? 0 : content.item ? content.item.implicitWidth : 0
   implicitHeight:barSize
   readonly property bool opened:!!content.item && content.item.opened===true
-  function open(){if(content.item && content.item.open)content.item.open()}
+  function open(){
+    if(moduleName==="omarchy.keyboard-layout" && keyboardAvailable) {
+      if(content.item.multipleInputs)InputMethodState.cycle()
+      else if(content.item.multipleLayouts && content.item.cycleLayout)content.item.cycleLayout()
+    } else if(content.item && content.item.open)content.item.open()
+  }
   function close(){if(content.item && content.item.close)content.item.close()}
   function closeForPopoutSwitch(){if(content.item && content.item.closeForPopoutSwitch)content.item.closeForPopoutSwitch();else close()}
   function inject(){
@@ -35,5 +52,5 @@ BarWidget {
   onBarChanged:inject()
   onSettingsChanged:inject()
   onFixedEdgeChanged:inject()
-  Loader {id:content;sourceComponent:root.sourceComponent;anchors.fill:parent;onLoaded:root.inject()}
+  Loader {id:content;sourceComponent:root.sourceComponent;anchors.fill:parent;onLoaded:{root.inject();root.reportKeyboard()}}
 }

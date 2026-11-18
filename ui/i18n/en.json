@@ -62,5 +62,7 @@
   "agents": "Agents",
   "diagnostics": "GPU: %1 \u00b7 System monitor: %2 \u00b7 GPU monitor: %3",
   "noGpu": "Not detected",
-  "unavailable": "Unavailable"
+  "unavailable": "Unavailable",
+  "keyboard": "Keyboard \u00b7 %1",
+  "keyboardHelp": "Switch to the next keyboard layout or input method."
 }
