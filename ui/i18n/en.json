@@ -59,5 +59,8 @@
   "network": "Network",
   "audio": "Audio",
   "power": "Power",
-  "agents": "Agents"
+  "agents": "Agents",
+  "diagnostics": "GPU: %1 \u00b7 System monitor: %2 \u00b7 GPU monitor: %3",
+  "noGpu": "Not detected",
+  "unavailable": "Unavailable"
 }

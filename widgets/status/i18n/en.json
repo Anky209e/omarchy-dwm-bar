@@ -10,7 +10,7 @@
   "state.ok": "Live reading \u00b7 Right click: refresh hardware",
   "state.paused": "Game mode on \u00b7 Right click: sample once",
   "state.sleep": "GPU asleep; polling skipped to avoid waking it",
-  "state.missing": "No supported NVIDIA GPU detected",
+  "state.missing": "GPU sensor is not exposed or supported by this driver",
   "state.error": "Sensor or driver read failed \u00b7 Right click: retry",
   "state.stale": "Reading is stale \u00b7 Right click: retry",
   "state.loading": "Waiting for the first reading",

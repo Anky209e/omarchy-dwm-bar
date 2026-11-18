@@ -12,7 +12,7 @@ BarWidget {
   readonly property var prefs:telemetry?telemetry.settings:({showCpu:true,showRam:true,showGpu:true,showVolume:true,cpuWarn:90,ramWarn:90,gpuWarn:95})
   visible:!telemetry || (telemetry.modeFor(monitorName)==="full" && (prefs.showCpu || prefs.showRam || prefs.showGpu || prefs.showVolume))
   readonly property string fastStatus:telemetry?telemetry.hardwareStatus:"loading"
-  readonly property string gpuStatus:telemetry?telemetry.gpuStatus:"loading"
+  readonly property string gpuStatus:telemetry?(telemetry.gpuStatus==="ok" && telemetry.gpu.gpu<0?"missing":telemetry.gpuStatus):"loading"
   function valueText(key,value,status){
     var code=status==="paused"?"PAU":status==="error"?"ERR":status==="sleep"?"SLP":status==="missing" || status==="unknown"?"N/A":status==="stale"?"…":value<0?"—":""
     return code?strings.t("sensorState").arg(strings.t("label."+key)).arg(code):strings.t(key).arg(Commons.I18n.formatNumber(value))
@@ -30,7 +30,7 @@ BarWidget {
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
   function monitor(button, program) {
     if (button === Qt.RightButton) { if (telemetry) telemetry.refreshHardware() }
-    else Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", program])
+    else if(telemetry)telemetry.launchMonitor(program === "nvtop")
   }
   implicitWidth: blocks.implicitWidth
 

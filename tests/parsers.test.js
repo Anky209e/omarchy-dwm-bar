@@ -25,6 +25,8 @@ assert.equal(model.hardware(reset, {total: 1300, idle: 950, ram: 35, cpu: 73}).c
 assert.deepEqual(model.gpu({available: true, gpu: 28, temperature: 48}), {available: true, gpu: 28, temperature: 48});
 for (const bad of [null, {available:true,gpu:101,temperature:48}, {available:true,gpu:28,temperature:151}, {available:true,gpu:'<img src=x>',temperature:48}])
   assert.equal(model.gpu(bad).available, false);
+assert.deepEqual(model.gpu({available:true,gpu:42,temperature:-1}),{available:true,gpu:42,temperature:-1});
+assert.deepEqual(model.gpu({available:true,gpu:-1,temperature:54}),{available:true,gpu:-1,temperature:54});
 const parse = execute('widgets/status/ThemePalette.qml', 'parse');
 const palette = {values: {}};
 parse.call(palette, 'green = "#9ece6a"\ncyan = "#449dab"\nblue = "<img src=x>"');

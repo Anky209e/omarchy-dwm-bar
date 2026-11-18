@@ -9,7 +9,7 @@ BarWidget {
   moduleName: "dwm.temperature"
   property QtObject telemetry: null
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
-  readonly property string sensorStatus:telemetry?telemetry.gpuStatus:"loading"
+  readonly property string sensorStatus:telemetry?(telemetry.gpuStatus==="ok" && telemetry.gpu.temperature<0?"missing":telemetry.gpuStatus):"loading"
   visible:!telemetry || (telemetry.modeFor(monitorName)==="full" && telemetry.settings.showTemperature)
   readonly property int temperature: telemetry ? telemetry.gpu.temperature : -1
   readonly property bool hardwarePaused: !!telemetry && telemetry.hardwarePaused
@@ -30,7 +30,7 @@ BarWidget {
     tooltipText: strings.t("state."+root.sensorStatus)
     onPressed: function(button) {
       if (button === Qt.RightButton) { if (root.telemetry) root.telemetry.refreshHardware() }
-      else Quickshell.execDetached(["omarchy", "launch", "terminal", "-e", "nvtop"])
+      else if(root.telemetry)root.telemetry.launchMonitor(true)
     }
   }
 }

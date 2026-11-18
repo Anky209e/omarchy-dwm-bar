@@ -13,38 +13,9 @@ import time
 
 from artwork import fetch
 from preferences import load, normalize, save
-from telemetry import hardware, parse_gpu, query
+from telemetry import hardware
+from sensors import read_gpu
 
-
-def gpu_power(sysroot=Path('/sys/bus/pci/devices')):
-    """Read kernel power state without opening the NVIDIA device."""
-    try:
-        candidates = sorted(sysroot.iterdir())
-    except OSError:
-        return 'unknown'
-    states = []
-    for device in candidates:
-        try:
-            if (device / 'vendor').read_text().strip().lower() != '0x10de': continue
-            if not (device / 'class').read_text().strip().startswith('0x03'): continue
-        except OSError:
-            continue
-        try:
-            states.append((device / 'power/runtime_status').read_text().strip())
-        except OSError:
-            states.append('unknown')
-    if not states: return 'missing'
-    # Do not probe a sleeping device just to discover the nvidia-smi index.
-    if any(state in ('suspended', 'suspending') for state in states): return 'sleep'
-    return 'active' if all(state == 'active' for state in states) else 'unknown'
-
-
-def read_gpu(sleep_aware=True):
-    power = gpu_power()
-    if power == 'missing': return {'available': False, 'status': 'missing'}
-    if sleep_aware and power in ('sleep', 'unknown'): return {'available': False, 'status': power}
-    data = parse_gpu(query(['nvidia-smi', '--query-gpu=utilization.gpu,temperature.gpu', '--format=csv,noheader,nounits', '-i', '0']))
-    return dict(data, status='ok' if data['available'] else 'error')
 
 
 def emit(event, **values):
@@ -66,6 +37,7 @@ class Worker:
 
     def send_settings(self):
         emit('settings', values=self.settings)
+        emit('capabilities', values={name:shutil.which(name) is not None for name in ['btop','htop','top','nvtop','cava','nvidia-smi']})
 
     def sample_fast(self, manual=False):
         self.fast_count += 1

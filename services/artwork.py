@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import struct
+import stat
 from urllib.parse import urlsplit, unquote
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
@@ -47,22 +48,37 @@ def dimensions(data):
     return None
 
 
+def read_image(path):
+    """Bound reads and reject FIFOs, devices and symlinks before decoding."""
+    descriptor=os.open(path,os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    with os.fdopen(descriptor,'rb') as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):raise ValueError('Not a regular image')
+        return stream.read(LIMIT+1)
+
+
 def fetch(url, remote=True, cache=None):
     if not isinstance(url, str) or not 0 < len(url) <= 4096:
         return {'source': '', 'status': 'none'}
     cache = cache or Path(os.environ.get('XDG_CACHE_HOME', str(Path.home() / '.cache'))) / 'omarchy/dwm-bar/art'
-    parsed = urlsplit(url)
+    try: parsed = urlsplit(url)
+    except ValueError: return {'source':'','status':'blocked'}
     if parsed.scheme == 'file' and parsed.netloc in ('', 'localhost'):
         local = Path(unquote(parsed.path))
         if not local.is_absolute(): return {'source': '', 'status': 'blocked'}
         try:
-            with local.open('rb') as stream: data = stream.read(LIMIT + 1)
-        except OSError:
+            data = read_image(local)
+        except (OSError,ValueError):
             return {'source': '', 'status': 'unavailable'}
     elif remote and remote_allowed(url):
         cache.mkdir(parents=True, exist_ok=True)
         target = cache / (hashlib.sha256(url.encode()).hexdigest() + '.img')
-        if target.is_file(): return {'source': target.as_uri(), 'status': 'ok'}
+        if target.is_file():
+            try:
+                cached_data=read_image(target);cached_size=dimensions(cached_data)
+                if len(cached_data)<=LIMIT and cached_size and all(0<side<=4096 for side in cached_size):
+                    return {'source':target.as_uri(),'status':'ok'}
+            except (OSError,ValueError):pass
+            return {'source':'','status':'unsupported'}
         try:
             request = Request(url, headers={'User-Agent': 'Omarchy-DWM-Bar/2.2', 'Accept': 'image/png,image/jpeg'})
             with build_opener(SafeRedirect()).open(request, timeout=3) as response:

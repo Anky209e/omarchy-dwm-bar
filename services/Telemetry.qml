@@ -20,6 +20,19 @@ Item {
   property real gpuAt: 0
   property real now: Date.now()
   property double savedAt: 0
+  property var capabilities: ({})
+  property string gpuVendor: ""
+  property string gpuDevice: ""
+  function monitorProgram(gpuMonitor) {
+    if(gpuMonitor && capabilities.nvtop)return "nvtop"
+    if(capabilities.btop)return "btop"
+    if(capabilities.htop)return "htop"
+    return capabilities.top?"top":""
+  }
+  function launchMonitor(gpuMonitor) {
+    var program=monitorProgram(gpuMonitor)
+    if(program)Quickshell.execDetached(["omarchy","launch","terminal","-e",program])
+  }
   property bool settingsError: false
   property bool settingsReady: false
   property int fastRequests: 0
@@ -106,7 +119,10 @@ Item {
     if(line.length>65536)return
     try {
       var data=JSON.parse(line)
-      if(data.event==="settings") {
+      if(data.event==="capabilities") {
+        var next={};for(var key in data.values)if(["btop","htop","top","nvtop","cava","nvidia-smi"].indexOf(key)>=0)next[key]=data.values[key]===true
+        capabilities=next
+      } else if(data.event==="settings") {
         settings=data.values;settingsReady=true;settingsError=false;savedAt=Date.now();syncWorker();if(musicOpen)requestArt()
       } else if(data.event==="settingsError")settingsError=true
       else if(data.event==="hardware") {
@@ -114,6 +130,8 @@ Item {
         if(data.status==="ok"){hardware=Model.hardware(hardware,data.data);fastAt=Date.now()}
       } else if(data.event==="gpu") {
         gpuState=data.status;gpuRequests=Number(data.count)||0
+        gpuVendor=data.data && typeof data.data.vendor==="string"?data.data.vendor.slice(0,32):""
+        gpuDevice=data.data && typeof data.data.device==="string"?data.data.device.slice(0,32):""
         if(data.status==="ok"){gpu=Model.gpu(data.data);gpuAt=Date.now()}
       } else if(data.event==="art" && data.request===artRequest) {
         artSource=typeof data.source==="string" && data.source.indexOf("file://")===0 ? data.source:"";artState=data.status
@@ -144,7 +162,7 @@ Item {
   Timer { interval:5000;running:true;repeat:true;triggeredOnStart:true;onTriggered:root.refreshRecording() }
   ShellIpc {
     target:"dwm.bar"
-    function telemetry():string {return JSON.stringify({hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,backendRunning:worker.running})}
+    function telemetry():string {return JSON.stringify({hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,capabilities:root.capabilities,gpuVendor:root.gpuVendor,gpuDevice:root.gpuDevice,backendRunning:worker.running})}
     function refresh():void{root.refreshHardware()}
     function preferences():string{return JSON.stringify(root.settings)}
     function reloadSettings():void{root.send({command:"reload"})}

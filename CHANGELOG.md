@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.0
+
+- Remove the music underline, including the host panel mark.
+- Add AMD sysfs utilization, exposed AMD/Intel GPU temperatures and independent missing-sensor handling.
+- Select NVIDIA by checked PCI address and preserve discrete GPU sleep protection.
+- Detect optional monitor tools, provide fallbacks and show capability diagnostics.
+- Reject blocking/non-regular artwork files and validate cached images.
+- Add read-only installation diagnostics, portable CI and explicit security/compatibility limits.
+
 ## 2.5.0
 
 - Add a per-output adaptive corner drawer with wrapped tray icons and scrolling.

@@ -34,7 +34,7 @@ RIGHT  CPU | RAM | GPU | VOL | TEMP | date/time | idle/night/recording/DND | con
 
 - Numbered workspace tags with a solid active-tag highlight and occupied markers.
 - `[]=` tiled, `|||` scrolling and `><>` floating layout symbols.
-- Fixed-width, elided music title; the theme accent is used while playing.
+- Fixed-width, elided music title; theme color indicates playback, without an underline.
 - Tight CPU, RAM, GPU and volume text blocks, plus an independent temperature block.
 - Fixed-order corner controls. Nothing expands on hover.
 - Native Omarchy calendar, network, Bluetooth, audio, power and keyboard controls.
@@ -96,7 +96,7 @@ All colors come from the current Omarchy palette; semantic colors fall back to t
 | --- | --- | --- |
 | CPU | Green | Red at 90% |
 | RAM | Blue | Red at 90% |
-| GPU | Magenta | Yellow at 95%; muted when unavailable |
+| GPU | Magenta | Red at 95%; muted when unavailable |
 | Volume | Cyan | Muted when muted |
 | GPU temperature | Cyan | Yellow at 75°C; red at 85°C; muted when unavailable |
 | Music | Accent while playing | Muted when paused or absent |
@@ -166,7 +166,7 @@ MIT. Workspace code derives from Omarchy. Flat Tray is vendored from [WhiteWebDe
 
 ## Polish and accessibility (2.4)
 
-Active idle/night-light/recording/DND controls have a colored underline as well as a brighter glyph. Playing music has a matching indicator. Theme-derived sensor colors are adjusted to a minimum 4.5:1 contrast against the theme background. Selected panel controls have an accent fill and marker; disabled controls stay dimmed.
+Active idle/night-light/recording/DND controls have a colored underline as well as a brighter glyph. Music uses playback color only; it has no underline. Theme-derived sensor colors are adjusted to a minimum 4.5:1 contrast against the theme background. Selected panel controls have an accent fill and marker; disabled controls stay dimmed.
 
 Settings and music buttons support Tab / Shift+Tab and Enter / Space. Escape dismisses these panels. Music width adapts per output. Settings → Widgets includes individual configured add-ons, preserving their original configuration and native panels. Settings save automatically; failures remain visible. Reset appearance requires a second click and preserves monitor profiles, Game mode and remote artwork permission.
 
@@ -204,3 +204,19 @@ Verified locally: both output profiles, drawer and native panel routing, Agents 
 The installed hyprmoncfg 2.7.0 had queued callbacks outlive destroyed panels. An optional source patch is included at [docs/hyprmoncfg-2.7.0-lifecycle.patch](docs/hyprmoncfg-2.7.0-lifecycle.patch); it has been applied to this machine's user-owned plugin. It is not needed to install the bar and is not applied automatically to another plugin. Two native Agents startup callbacks can still warn about `pointAt` after context destruction; its panel opens successfully. The packaged Agents source is unchanged.
 
 Keyboard/IPC shortcuts: `omarchy-shell dwm.bar.ui overflow` opens the drawer; `omarchy-shell dwm.bar.ui control omarchy.agents` opens Agents on the focused output. The control endpoint accepts only native controls and configured add-ons.
+
+## Portable sensors and dependency diagnostics (2.6)
+
+The plugin selects one GPU in stable PCI order, preferring NVIDIA, then AMD, then Intel. It retains a sleeping discrete GPU instead of silently switching to the integrated GPU. With sleep awareness enabled, a suspended or unknown-power device is not queried. NVIDIA queries use the checked PCI address rather than GPU index 0.
+
+| Hardware | Utilization | Temperature |
+| --- | --- | --- |
+| NVIDIA | `nvidia-smi` | `nvidia-smi` |
+| AMD | Kernel `gpu_busy_percent` when exposed | Kernel hwmon when exposed |
+| Intel | Not implemented | Kernel hwmon when exposed |
+
+GPU load and temperature are independent: a missing sensor does not discard another working reading. Unavailable values show N/A. No elevated access, debugfs access or permission changes are requested. AMD behavior follows the [kernel driver interface](https://docs.kernel.org/gpu/amdgpu/thermal.html); Intel temperature exposure depends on the [driver hwmon ABI](https://linux.googlesource.com/linux/kernel/git/torvalds/linux/+/55365ab85a93edec22395547cdc7cbe73a98231b/Documentation/ABI/testing/sysfs-driver-intel-xe-hwmon).
+
+Monitor clicks use `nvtop` for GPU monitoring when installed, otherwise `btop`, `htop`, then `top`. The settings panel reports the selected vendor and tools. Missing cava disables visualization, while music controls remain usable. Run `python -B scripts/doctor.py` from a checkout for read-only dependency, host API-file and GPU-discovery diagnostics; this is optional troubleshooting, not an install step.
+
+Automated fixtures cover AMD, Intel temperature-only, NVIDIA PCI selection, missing sensors and sleep protection. Real AMD/Intel hardware, a clean Omarchy machine and physical device transitions remain unverified. CI runs the portable tests on pushes and pull requests; QML integration still needs Omarchy's graphical shell. Only the documented Omarchy/Quickshell combination is currently verified.

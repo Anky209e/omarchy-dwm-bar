@@ -1,4 +1,5 @@
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,7 @@ sys.path.insert(0, str(SERVICES))
 import artwork
 import preferences
 import worker
+import sensors
 
 
 class PreferencesTests(unittest.TestCase):
@@ -51,36 +53,51 @@ class PreferencesTests(unittest.TestCase):
 
 
 class SleepTests(unittest.TestCase):
-    def gpu(self, root, name='0000:01:00.0', status='suspended', vendor='0x10de', kind='0x030000'):
-        device = root / name
-        (device / 'power').mkdir(parents=True)
-        (device / 'vendor').write_text(vendor)
-        (device / 'class').write_text(kind)
-        (device / 'power/runtime_status').write_text(status)
+    def gpu(self, root, name='0000:01:00.0', status='suspended', vendor='0x10de'):
+        device=root/name;(device/'power').mkdir(parents=True)
+        (device/'vendor').write_text(vendor);(device/'class').write_text('0x030000')
+        (device/'power/runtime_status').write_text(status)
         return device
 
-    def test_sysfs_reads_do_not_open_device(self):
-        with tempfile.TemporaryDirectory(prefix='dwm-sysfs-') as directory:
-            root = Path(directory)
-            device = self.gpu(root)
-            self.gpu(root, '0000:01:00.1', kind='0x040300')
-            self.assertEqual(worker.gpu_power(root), 'sleep')
-            (device / 'power/runtime_status').write_text('active')
-            self.assertEqual(worker.gpu_power(root), 'active')
-            self.gpu(root, '0000:02:00.0')
-            self.assertEqual(worker.gpu_power(root), 'sleep')
-            (device / 'power/runtime_status').unlink()
-            (root / '0000:02:00.0/power/runtime_status').write_text('active')
-            self.assertEqual(worker.gpu_power(root), 'unknown')
-
-    def test_sleeping_or_unknown_gpu_never_invokes_nvidia(self):
-        for state in ['sleep', 'unknown', 'missing']:
-            with patch.object(worker, 'gpu_power', return_value=state), patch.object(worker, 'query') as query:
-                self.assertEqual(worker.read_gpu(True)['status'], state)
+    def test_sleeping_or_unknown_gpu_never_queries_driver(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);device=self.gpu(root)
+            with patch.object(sensors,'query') as query:
+                self.assertEqual(sensors.read_gpu(True,root)['status'],'sleep')
+                (device/'power/runtime_status').unlink()
+                self.assertEqual(sensors.read_gpu(True,root)['status'],'unknown')
                 query.assert_not_called()
-        with patch.object(worker, 'gpu_power', return_value='sleep'), patch.object(worker, 'query', return_value='12, 48') as query:
-            self.assertEqual(worker.read_gpu(False)['status'], 'ok')
-            query.assert_called_once()
+
+    def test_nvidia_uses_checked_pci_device(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.gpu(root,name='0000:02:00.0',status='active')
+            with patch.object(sensors,'query',return_value='12, 48') as query:
+                self.assertEqual(sensors.read_gpu(True,root)['gpu'],12)
+                self.assertEqual(query.call_args.args[0][-1],'0000:02:00.0')
+
+    def test_amd_utilization_without_temperature(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);device=self.gpu(root,status='active',vendor='0x1002')
+            (device/'gpu_busy_percent').write_text('42')
+            value=sensors.read_gpu(True,root)
+            self.assertTrue(value['available']);self.assertEqual(value['gpu'],42)
+            self.assertEqual(value['temperature'],-1)
+            (device/'gpu_busy_percent').write_text('101')
+            self.assertEqual(sensors.read_gpu(True,root)['status'],'missing')
+
+    def test_intel_temperature_does_not_invent_utilization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);device=self.gpu(root,status='active',vendor='0x8086')
+            hwmon=device/'hwmon/hwmon0';hwmon.mkdir(parents=True)
+            (hwmon/'temp1_input').write_text('54000')
+            value=sensors.read_gpu(True,root)
+            self.assertEqual(value['temperature'],54);self.assertEqual(value['gpu'],-1)
+            self.assertEqual(value['vendor'],'Intel')
+
+    def test_sleeping_discrete_gpu_is_not_replaced_with_integrated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.gpu(root);self.gpu(root,name='0000:00:02.0',status='active',vendor='0x8086')
+            self.assertEqual(sensors.read_gpu(True,root)['status'],'sleep')
 
 
 class ArtworkTests(unittest.TestCase):
@@ -91,6 +108,21 @@ class ArtworkTests(unittest.TestCase):
         self.assertTrue(artwork.remote_allowed('https://i.scdn.co/image/cover'))
         for url in ['http://i.scdn.co/cover', 'https://i.scdn.co.evil.invalid/cover', 'https://user:pass@i.scdn.co/image', 'https://127.0.0.1/image', 'https://i.scdn.co:1234/image', 'file:///tmp/a']:
             self.assertFalse(artwork.remote_allowed(url))
+
+    def test_nonregular_local_cover_is_rejected_without_blocking(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'pipe';os.mkfifo(path)
+            self.assertEqual(artwork.fetch(path.as_uri(),False)['status'],'unavailable')
+            self.assertEqual(artwork.fetch('https://[',False)['status'],'blocked')
+
+    def test_corrupt_cached_cover_is_not_passed_to_qml(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory);url='https://i.scdn.co/image/test'
+            target=cache/(hashlib.sha256(url.encode()).hexdigest()+'.img')
+            target.write_bytes(b'<svg><image href="https://example.invalid"/></svg>')
+            with patch.object(artwork,'build_opener') as opener:
+                self.assertEqual(artwork.fetch(url,True,cache)['status'],'unsupported')
+                opener.assert_not_called()
 
     def test_local_cover_is_bounded_and_cached(self):
         with tempfile.TemporaryDirectory(prefix='dwm-art-') as directory:

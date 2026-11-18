@@ -22,7 +22,6 @@ BarWidget {
   readonly property string album:player?String(player.trackAlbum || "").slice(0,256):""
   visible:!telemetry || (telemetry.modeFor(monitorName)!=="hidden" && telemetry.settings.showMusic)
   implicitWidth:Math.max(Style.space(64), Math.min(Style.space(telemetry?telemetry.settings.musicWidth:240), screen ? screen.width * 0.14 : Style.space(240)))
-  readonly property int openPanelIndicatorWidth:Style.space(12)
   implicitHeight:barSize
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
   ThemePalette {id:themePalette}
@@ -52,7 +51,6 @@ BarWidget {
     bar:root.bar;text:"music";labelVisible:false;pressScale:1
     tooltipText:strings.t("hint")
     onPressed:function(mouseButton){if(mouseButton===Qt.RightButton)root.playPause();else if(mouseButton===Qt.MiddleButton){if(root.player && root.player.canGoNext)root.player.next()}else root.opened=!root.opened}
-    Rectangle { anchors.bottom:parent.bottom; anchors.bottomMargin:Style.space(2); anchors.horizontalCenter:parent.horizontalCenter; width:root.openPanelIndicatorWidth; height:Style.space(2); visible:root.playing && !root.opened; color:themePalette.green }
     Text {
       anchors.fill:parent;anchors.leftMargin:Style.space(6);anchors.rightMargin:Style.space(6)
       verticalAlignment:Text.AlignVCenter;textFormat:Text.PlainText;elide:Text.ElideRight
@@ -62,10 +60,16 @@ BarWidget {
       font.family:Style.font.family;font.pixelSize:Style.font.body
     }
   }
+  // Coordinate dismissal without asking the bar host to paint a music mark.
+  QtObject {
+    id:musicPanelOwner
+    function close(){root.close()}
+    function closeForPopoutSwitch(){root.close()}
+  }
   KeyboardPanel {
     id:panel
     focusTarget: column
-    anchorItem:button;owner:root;bar:root.bar;open:root.opened
+    anchorItem:button;owner:musicPanelOwner;bar:root.bar;open:root.opened
     contentWidth:Style.space(400)
     contentHeight:fittedContentHeight(column.implicitHeight)
     Column {

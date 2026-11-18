@@ -111,3 +111,15 @@ assert(!compact.call(compactContext,'narrow'));
 compactContext.SystemTray.items.values=Array(8).fill({});
 assert(compact.call(compactContext,'narrow'),'Tray growth should trigger compact mode');
 console.log('Adaptive drawer checks passed: per-output width, forced drawer and tray growth.');
+
+const monitorMatch=service.match(/function monitorProgram\(gpuMonitor\) \{([\s\S]*?)\n  \}/);
+assert(monitorMatch);
+const monitorProgram=new Function('gpuMonitor','with(this){'+monitorMatch[1]+'}');
+assert.equal(monitorProgram.call({capabilities:{nvtop:true,btop:true}},true),'nvtop');
+assert.equal(monitorProgram.call({capabilities:{btop:true}},true),'btop');
+assert.equal(monitorProgram.call({capabilities:{htop:true}},false),'htop');
+assert.equal(monitorProgram.call({capabilities:{top:true}},true),'top');
+assert.equal(monitorProgram.call({capabilities:{}},false),'');
+assert(!musicPanel.includes('anchors.bottom:parent.bottom; anchors.bottomMargin:Style.space(2)'));
+assert(musicPanel.includes('owner:musicPanelOwner'));
+console.log('Monitor fallback and music-underline regressions passed.');

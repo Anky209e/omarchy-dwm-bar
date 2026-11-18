@@ -110,6 +110,7 @@ BarWidget {
                   }
                 }
               }
+              PlainLabel { width:parent.width;wrapMode:Text.WordWrap;font.pixelSize:Style.font.caption;text:root.telemetry ? strings.t("diagnostics").arg(root.telemetry.gpuVendor || strings.t("noGpu")).arg(root.telemetry.monitorProgram(false) || strings.t("unavailable")).arg(root.telemetry.monitorProgram(true) || strings.t("unavailable")) : "" }
               Heading { text: strings.t("polling") }
               Row {
                 spacing: Style.space(8)

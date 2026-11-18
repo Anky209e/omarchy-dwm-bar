@@ -16,9 +16,10 @@ function resetBaseline(previous) {
   return {total: 0, idle: 0, cpu: previous.cpu, ram: previous.ram}
 }
 function gpu(sample) {
-  if (!sample || sample.available !== true || !validPercent(sample.gpu)
-      || typeof sample.temperature !== "number" || !isFinite(sample.temperature) || sample.temperature < 0 || sample.temperature > 150)
-    return {available: false, gpu: -1, temperature: -1}
-  return {available: true, gpu: Math.round(sample.gpu), temperature: Math.round(sample.temperature)}
+  if (!sample || sample.available !== true) return {available:false,gpu:-1,temperature:-1}
+  var load=validPercent(sample.gpu)?Math.round(sample.gpu):-1
+  var temp=typeof sample.temperature==="number" && isFinite(sample.temperature) && sample.temperature>=0 && sample.temperature<=150?Math.round(sample.temperature):-1
+  if ((sample.gpu!==-1 && load<0) || (sample.temperature!==-1 && temp<0)) return {available:false,gpu:-1,temperature:-1}
+  return {available:load>=0 || temp>=0,gpu:load,temperature:temp}
 }
 if (typeof module !== "undefined") module.exports = {hardware: hardware, resetBaseline: resetBaseline, gpu: gpu}
