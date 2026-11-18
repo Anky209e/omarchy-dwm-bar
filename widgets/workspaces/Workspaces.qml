@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../../services/WorkspaceModel.js" as WorkspaceModel
 
 BarWidget {
   id: root
@@ -18,6 +19,7 @@ BarWidget {
   // default/hypr/monitor-workspaces.lua). Each bar shows its own monitor's block,
   // numbered 1-10, and the one that monitor shows, whichever monitor has focus.
   readonly property int slots: 10
+  readonly property bool globalPlan:telemetry && telemetry.globalWorkspacePlan
 
   readonly property var monitor: {
     var window = root.QsWindow.window
@@ -82,25 +84,7 @@ BarWidget {
   // them come workspaces that are only visiting: those of a monitor that is
   // unplugged, which had no room to join this one's.
   function workspaceIds() {
-    var base = root.block * root.slots
-    var ids = []
-    for (var slot = 1; slot <= root.slots; slot++) ids.push(base + slot)
-    var guests = []
-    var values = Hyprland.workspaces.values
-
-    for (var i = 0; i < values.length; i++) {
-      var id = values[i].id
-      if (id <= 0) continue
-      if (root.blockOf(id) === root.block) {
-        if (ids.indexOf(id) === -1) ids.push(id)
-      } else if (values[i].monitor && values[i].monitor.name === root.monitorName) {
-        guests.push(id)
-      }
-    }
-
-    ids.sort(function(left, right) { return left - right })
-    guests.sort(function(left, right) { return left - right })
-    return ids.concat(guests)
+    return WorkspaceModel.workspaceIds(root.block,root.slots,Hyprland.workspaces.values,root.monitorName,root.globalPlan)
   }
 
   function dispatch(expression) {
@@ -108,7 +92,9 @@ BarWidget {
   }
 
   function focusWorkspace(id) {
-    if (root.blockOf(id) === root.block) {
+    if(root.globalPlan) {
+      root.dispatch("o.workspaces.focus("+id+")")
+    } else if (root.blockOf(id) === root.block) {
       root.dispatch("o.workspaces.focus(" + root.slotOf(id) + ", \"" + root.monitorName + "\")")
     } else {
       root.dispatch("hl.dsp.focus({ workspace = \"" + id + "\" })")
@@ -266,7 +252,7 @@ BarWidget {
         readonly property bool occupied: workspace !== null && workspace.toplevels.values.length > 0
         readonly property bool shown: root.monitor !== null && root.monitor.activeWorkspace !== null && root.monitor.activeWorkspace.id === modelData
         readonly property int slot: root.slotOf(modelData)
-        readonly property bool firstGuest: root.blockOf(modelData) !== root.block && index > 0 && root.blockOf(root.workspaceIds()[index - 1]) === root.block
+        readonly property bool firstGuest: !root.globalPlan && root.blockOf(modelData) !== root.block && index > 0 && root.blockOf(root.workspaceIds()[index - 1]) === root.block
         required property int index
 
         // A gap sets visiting workspaces apart from the monitor's own.
@@ -274,7 +260,7 @@ BarWidget {
         Layout.topMargin: firstGuest && root.vertical ? Style.space(6) : 0
 
         bar: root.bar
-        text: slot === root.slots ? "0" : String(slot)
+        text: WorkspaceModel.label(modelData,root.slots,root.globalPlan)
         foreground: shown ? Commons.Color.background : Commons.Color.bar.text
         pressScale: 1
         Rectangle {

@@ -7,11 +7,20 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.Mpris
 import qs.Commons
 import "TelemetryModel.js" as Model
+import "WorkspaceModel.js" as WorkspaceModel
 
 Item {
   id: root
   ThemePalette { id:sharedPalette }
   readonly property QtObject themePalette:sharedPalette
+  property bool globalWorkspacePlan:false
+  FileView {
+    path:(Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME")+"/.config")+"/hypr/hyprmoncfg-monitors.lua"
+    watchChanges:true;printErrors:false
+    onLoaded:root.globalWorkspacePlan=WorkspaceModel.hasGlobalPlan(text())
+    onFileChanged:reload()
+    onLoadFailed:root.globalWorkspacePlan=false
+  }
   property var shell: null
   property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,overflowAlways:false,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{},hiddenPlugins:[]})
   property var hardware: ({total:0,idle:0,cpu:-1,ram:-1})

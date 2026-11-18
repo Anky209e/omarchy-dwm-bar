@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.3
+
+- Follow hyprmoncfg global workspace numbering without duplicate wrapped labels; preserve existing windows and monitor-local behavior when no global plan is active.
+- Fix native/add-on widgets becoming stuck at zero width during startup due to inherited visibility.
+
 ## 2.6.2
 
 - Fix local artwork disclosure: owner-only cache directory and atomically written owner-only files, independent of umask.

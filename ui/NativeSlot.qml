@@ -12,7 +12,9 @@ BarWidget {
   visible:mode==="full" && (role==="clock" || !telemetry || (role==="plugins" ? (telemetry.settings.showPlugins && telemetry.pluginVisible(moduleName)) : telemetry.settings.showConnections))
   readonly property bool collapsed: !!telemetry && role!=="clock" && telemetry.compactFor(monitorName)
   opacity: collapsed ? 0 : 1
-  implicitWidth: collapsed ? 0 :content.item && content.item.visible ? content.item.implicitWidth:0
+  // Effective visibility depends on the host slot having a nonzero width.
+  // Checking it here creates a zero-width/hidden feedback loop at startup.
+  implicitWidth: collapsed ? 0 : content.item ? content.item.implicitWidth : 0
   implicitHeight:barSize
   readonly property bool opened:!!content.item && content.item.opened===true
   function open(){if(content.item && content.item.open)content.item.open()}

@@ -246,3 +246,7 @@ omarchy plugin remove anky.dwm-bar
 Or run `bash ~/.config/omarchy/plugins/anky.dwm-bar/scripts/uninstall.sh`. The helper preserves Omarchy's removal confirmation. Preferences are separate from the plugin directory.
 
 This is a workaround, not an automatic repair of Omarchy's remove command. A proposed ownership-guard patch for the host loaders is saved in `docs/omarchy-4.5.0-bar-loader-proposed.patch` for upstream review. It has not been applied or runtime-tested; packaged `/usr/share/omarchy` files are unchanged. Plugin destruction hooks are deliberately not used, since they also run during updates and ordinary bar switches.
+
+## Workspace-plan compatibility
+
+The bar follows hyprmoncfg's generated global workspace plan when it disables Omarchy's monitor-local numbering. Global tags use their real workspace IDs; workspaces above 10 are not wrapped into duplicate 1–0 labels. Existing windows in old workspace IDs remain accessible and are not moved automatically. Without a global plan, the original per-monitor blocks remain in use. This detection only reads the generated configuration; it never changes keybindings or workspace rules.

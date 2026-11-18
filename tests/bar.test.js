@@ -123,3 +123,17 @@ assert.equal(monitorProgram.call({capabilities:{}},false),'');
 assert(!musicPanel.includes('anchors.bottom:parent.bottom; anchors.bottomMargin:Style.space(2)'));
 assert(musicPanel.includes('owner:musicPanelOwner'));
 console.log('Monitor fallback and music-underline regressions passed.');
+
+const workspaceModel=require('../services/WorkspaceModel.js');
+assert(workspaceModel.hasGlobalPlan('  o.workspaces.enabled = false\n'));
+assert(!workspaceModel.hasGlobalPlan('-- o.workspaces.enabled = false'));
+assert(!workspaceModel.hasGlobalPlan('o.workspaces.enabled = true'));
+const globalValues=[{id:1,monitor:{name:'HDMI-A-1'}},{id:5,monitor:{name:'HDMI-A-1'}},{id:11,monitor:{name:'HDMI-A-1'}},{id:11,monitor:{name:'HDMI-A-1'}},{id:-1}];
+const globalIds=workspaceModel.workspaceIds(1,10,globalValues,'HDMI-A-1',true);
+assert.deepEqual(globalIds,[1,2,3,4,5,6,7,8,9,10,11]);
+assert.equal(new Set(globalIds.map(id=>workspaceModel.label(id,10,true))).size,globalIds.length);
+assert.equal(workspaceModel.label(11,10,true),'11');
+assert.equal(workspaceModel.label(11,10,false),'1');
+assert.deepEqual(workspaceModel.workspaceIds(1,10,globalValues,'HDMI-A-1',false),[11,12,13,14,15,16,17,18,19,20,1,5]);
+assert(!slot.includes('content.item && content.item.visible ?'),'Effective visibility must not gate intrinsic width at startup');
+console.log('Workspace plan and native sizing regressions passed.');
