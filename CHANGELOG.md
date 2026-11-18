@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.6.1
+
+- Share one theme watcher and lazily build music, settings and drawer contents.
+- Stop unused sensor polling without changing visible update rates.
+- Cancel queued cover work on close and avoid duplicate cover reloads.
+- Close inherited graphics descriptors in the Python worker.
+- Add resource cleanup and polling-demand regressions.
+
 ## 2.6.0
 
 - Remove the music underline, including the host panel mark.

@@ -10,6 +10,8 @@ import "TelemetryModel.js" as Model
 
 Item {
   id: root
+  ThemePalette { id:sharedPalette }
+  readonly property QtObject themePalette:sharedPalette
   property var shell: null
   property var settings: ({fastInterval:2,gpuInterval:5,cpuWarn:90,ramWarn:90,gpuWarn:95,tempWarm:75,tempHot:85,musicWidth:240,overflowAlways:false,gameMode:false,sleepAware:true,visualizer:true,remoteArtwork:false,showCpu:true,showRam:true,showGpu:true,showVolume:true,showTemperature:true,showIndicators:true,showTray:true,showConnections:true,showMusic:true,showPlugins:true,monitorDefault:"full",monitors:{},hiddenPlugins:[]})
   property var hardware: ({total:0,idle:0,cpu:-1,ram:-1})
@@ -39,6 +41,15 @@ Item {
   property int gpuRequests: 0
   property bool recording: false
   property int restartCount: 0
+  readonly property bool fullOutputVisible: {
+    var screens=Quickshell.screens
+    for(var i=0;i<screens.length;i++)if(modeFor(screens[i].name)==="full")return true
+    return false
+  }
+  readonly property bool fastWanted: fullOutputVisible && (settings.showCpu || settings.showRam)
+  readonly property bool gpuWanted: fullOutputVisible && (settings.showGpu || settings.showTemperature)
+  onFastWantedChanged: syncWorker()
+  onGpuWantedChanged: syncWorker()
   readonly property bool hardwarePaused: settings.gameMode === true
   readonly property string hardwareStatus: hardwarePaused ? "paused" : fastState === "ok" && now-fastAt > Math.max(10000,settings.fastInterval*3000) ? "stale" : fastState
   readonly property string gpuStatus: hardwarePaused ? "paused" : gpuState === "ok" && now-gpuAt > Math.max(15000,settings.gpuInterval*3000) ? "stale" : gpuState
@@ -98,10 +109,14 @@ Item {
     musicUsers=next
   }
   function syncWorker() {
+    send({command:"demand",fast:fastWanted,gpu:gpuWanted})
     send({command:"pause",paused:!settingsReady || hardwarePaused})
     send({command:"visualizer",enabled:visualizerWanted})
   }
+  property bool artPolicy:false
   function requestArt() {
+    if(artRequest===trackArt && artPolicy===settings.remoteArtwork && ["loading","ok","blocked","unsupported"].indexOf(artState)>=0)return
+    artPolicy=settings.remoteArtwork
     artSource="";artState=trackArt ? "loading":"none";artRequest=trackArt
     if(musicOpen && trackArt)send({command:"art",url:trackArt,request:trackArt})
   }
@@ -142,7 +157,7 @@ Item {
   }
   onHardwarePausedChanged: { hardware=Model.resetBaseline(hardware);syncWorker() }
   onVisualizerWantedChanged: send({command:"visualizer",enabled:visualizerWanted})
-  onMusicOpenChanged: { if(musicOpen)requestArt();else {artSource="";artState="none";artRequest=""} }
+  onMusicOpenChanged: { if(musicOpen)requestArt();else {send({command:"artCancel"});artSource="";artState="none";artRequest=""} }
   onTrackArtChanged: { if(musicOpen)requestArt() }
 
   Process {
@@ -156,13 +171,13 @@ Item {
   }
   Timer { id:restart;onTriggered:worker.running=true }
   Timer { interval:30000; running:worker.running; onTriggered:root.restartCount=0 }
-  Timer { interval:1000;running:true;repeat:true;onTriggered:root.now=Date.now() }
+  Timer { interval:1000;running:(root.fastWanted || root.gpuWanted) && !root.hardwarePaused;repeat:true;onTriggered:root.now=Date.now() }
   Process { id:recordingRead;command:["omarchy-capture-screenrecording","--status"];onExited:function(code){root.recording=code===0} }
   Process { id:recordAction;onExited:Qt.callLater(root.refreshRecording) }
   Timer { interval:5000;running:true;repeat:true;triggeredOnStart:true;onTriggered:root.refreshRecording() }
   ShellIpc {
     target:"dwm.bar"
-    function telemetry():string {return JSON.stringify({hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,capabilities:root.capabilities,gpuVendor:root.gpuVendor,gpuDevice:root.gpuDevice,backendRunning:worker.running})}
+    function telemetry():string {return JSON.stringify({fastWanted:root.fastWanted,gpuWanted:root.gpuWanted,hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,capabilities:root.capabilities,gpuVendor:root.gpuVendor,gpuDevice:root.gpuDevice,backendRunning:worker.running})}
     function refresh():void{root.refreshHardware()}
     function preferences():string{return JSON.stringify(root.settings)}
     function reloadSettings():void{root.send({command:"reload"})}

@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'), assert=require('node:assert/strict');
-const source=fs.readFileSync('widgets/status/ThemePalette.qml','utf8');
+const source=fs.readFileSync('services/ThemePalette.qml','utf8');
 function method(name,args) {
  const start=source.indexOf('  function '+name+'('), begin=source.indexOf('{',start);
  let level=1,end=begin+1;

@@ -15,7 +15,7 @@ BarWidget {
   readonly property bool hardwarePaused: !!telemetry && telemetry.hardwarePaused
   implicitWidth: button.implicitWidth
   implicitHeight: barSize
-  ThemePalette { id: themePalette }
+  readonly property var themePalette: telemetry ? telemetry.themePalette : ({green:Commons.Color.accent,blue:Commons.Color.accent,magenta:Commons.Color.accent,cyan:Commons.Color.accent,yellow:Commons.Color.accent,red:Commons.Color.urgent,muted:Commons.Color.bar.text})
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
   FontMetrics { id: metrics; font.family: Style.font.family; font.pixelSize: Style.font.body }
   WidgetButton {

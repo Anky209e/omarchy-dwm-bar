@@ -13,7 +13,7 @@ BarWidget {
   readonly property var state: telemetry ? telemetry.state : ({awake: false, night: false, recording: false, dnd: false})
   implicitWidth: row.implicitWidth
   implicitHeight: barSize
-  ThemePalette { id: themePalette }
+  readonly property var themePalette: telemetry ? telemetry.themePalette : ({green:Commons.Color.accent,blue:Commons.Color.accent,magenta:Commons.Color.accent,cyan:Commons.Color.accent,yellow:Commons.Color.accent,red:Commons.Color.urgent,muted:Commons.Color.bar.text})
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
   ShellIpc { target: "omarchy.indicators"; function refresh(): void { if (root.telemetry) root.telemetry.refreshRecording() } }
   component Icon: WidgetButton {

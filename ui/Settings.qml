@@ -40,13 +40,14 @@ BarWidget {
   }
   KeyboardPanel {
     id: panel
-    focusTarget: column
+    focusTarget: panel.loadedContent
     anchorItem: button
     owner: root
     bar: root.bar
     open: root.opened
     contentWidth: Style.space(440)
-    contentHeight: fittedContentHeight(column.implicitHeight)
+    contentHeight: fittedContentHeight(panel.loadedContentHeight)
+    content: Component {
     Column {
       id: column
       Keys.onEscapePressed: root.close()
@@ -200,6 +201,7 @@ BarWidget {
           }
         }
       }
+    }
     }
   }
 }

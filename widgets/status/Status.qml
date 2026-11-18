@@ -26,7 +26,7 @@ BarWidget {
   readonly property string volume: telemetry && telemetry.volumePercent >= 0 ? Commons.I18n.formatNumber(telemetry.volumePercent) + "%" : "—"
   readonly property bool hardwarePaused: !!telemetry && telemetry.hardwarePaused
   implicitHeight: barSize
-  ThemePalette { id: themePalette }
+  readonly property var themePalette: telemetry ? telemetry.themePalette : ({green:Commons.Color.accent,blue:Commons.Color.accent,magenta:Commons.Color.accent,cyan:Commons.Color.accent,yellow:Commons.Color.accent,red:Commons.Color.urgent,muted:Commons.Color.bar.text})
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
   function monitor(button, program) {
     if (button === Qt.RightButton) { if (telemetry) telemetry.refreshHardware() }

@@ -155,6 +155,34 @@ class ArtworkTests(unittest.TestCase):
                 handler.redirect_request(request,None,302,'',{},'https://127.0.0.1/private')
 
 
+class ResourceTests(unittest.TestCase):
+    def test_unused_inherited_descriptor_is_closed(self):
+        with tempfile.TemporaryFile() as stream:
+            code="import sys,os;sys.path.insert(0,sys.argv[1]);from worker import close_inherited_fds;close_inherited_fds();" + "\ntry:os.fstat(int(sys.argv[2]));sys.exit(1)\nexcept OSError:pass"
+            result=subprocess.run([sys.executable,'-B','-c',code,str(SERVICES),str(stream.fileno())],pass_fds=(stream.fileno(),),capture_output=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+
+    def test_closing_music_discards_pending_artwork(self):
+        instance=worker.Worker()
+        try:
+            instance.pending_art={'url':'https://i.scdn.co/never-fetch'}
+            instance.command({'command':'artCancel'})
+            self.assertIsNone(instance.pending_art)
+            self.assertTrue(instance.art_cancelled)
+        finally:instance.executor.shutdown(wait=False,cancel_futures=True)
+
+    def test_demand_reenable_schedules_immediate_sample(self):
+        instance=worker.Worker()
+        try:
+            instance.command({'command':'demand','fast':False,'gpu':False})
+            self.assertFalse(instance.fast_enabled);self.assertFalse(instance.gpu_enabled)
+            instance.next_fast=instance.next_gpu=time.monotonic()+100
+            instance.command({'command':'demand','fast':True,'gpu':False})
+            self.assertLessEqual(instance.next_fast,time.monotonic())
+            self.assertGreater(instance.next_gpu,time.monotonic())
+        finally:instance.executor.shutdown(wait=False,cancel_futures=True)
+
+
 class PersistentWorkerTests(unittest.TestCase):
     def test_one_process_handles_configuration_refresh_pause_and_shutdown(self):
         with tempfile.TemporaryDirectory(prefix='dwm-worker-') as directory:

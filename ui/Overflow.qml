@@ -44,11 +44,15 @@ BarWidget {
     }
   }
   KeyboardPanel {
+    id:panel
     anchorItem:button;bar:root.bar;owner:root;open:root.opened
     contentWidth:Style.space(330)
-    contentHeight:fittedContentHeight(Math.min(Style.space(550),column.implicitHeight))
-    focusTarget:column
+    contentHeight:fittedContentHeight(panel.loadedContentHeight)
+    focusTarget:panel.loadedContent ? panel.loadedContent.focusItem : null
+    content: Component {
     QQC.ScrollView {
+      property alias focusItem:column
+      implicitHeight:Math.min(Style.space(550),column.implicitHeight)
       width:parent.width;height:Math.min(Style.space(550),column.implicitHeight)
       contentWidth:availableWidth;clip:true
     Column {
@@ -80,6 +84,7 @@ BarWidget {
       }
       PlainLabel {visible:root.telemetry && root.telemetry.settings.showTray;text:strings.t("trayItems");font.bold:true}
       Tray.Tray {bar:root.bar;telemetry:root.telemetry;inDrawer:true;settings:({});width:Math.min(implicitWidth,column.width);height:implicitHeight}
+    }
     }
     }
   }

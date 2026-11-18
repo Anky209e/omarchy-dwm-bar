@@ -18,6 +18,15 @@ from sensors import read_gpu
 
 
 
+def close_inherited_fds():
+    """Qt can pass non-CLOEXEC graphics handles; this worker needs only stdio."""
+    for name in os.listdir('/proc/self/fd'):
+        try:
+            descriptor=int(name)
+            if descriptor>2:os.close(descriptor)
+        except (ValueError,OSError):pass
+
+
 def emit(event, **values):
     print(json.dumps(dict(event=event, **values), separators=(',', ':')), flush=True)
 
@@ -26,6 +35,7 @@ class Worker:
     def __init__(self):
         self.settings = load()
         self.paused = True
+        self.fast_enabled = self.gpu_enabled = True
         self.next_fast = self.next_gpu = time.monotonic()
         self.fast_count = self.gpu_count = 0
         self.cava = None
@@ -34,6 +44,7 @@ class Worker:
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.art = None
         self.pending_art = None
+        self.art_cancelled = False
 
     def send_settings(self):
         emit('settings', values=self.settings)
@@ -81,12 +92,22 @@ class Worker:
         if self.art and not self.art.done():
             self.pending_art = message
         else:
+            self.art_cancelled = False
             self.art_id = str(message.get('request', ''))[:4096]
             self.art = self.executor.submit(fetch, message.get('url', ''), self.settings['remoteArtwork'])
 
     def command(self, message):
         command = message.get('command')
-        if command == 'pause':
+        if command == 'demand':
+            fast, gpu = message.get('fast') is True, message.get('gpu') is True
+            if fast and not self.fast_enabled:self.next_fast=time.monotonic()
+            if gpu and not self.gpu_enabled:self.next_gpu=time.monotonic()
+            self.fast_enabled,self.gpu_enabled=fast,gpu
+        elif command == 'artCancel':
+            self.pending_art=None
+            self.art_cancelled=True
+            if self.art and self.art.cancel():self.art=None
+        elif command == 'pause':
             was = self.paused
             self.paused = self.settings['gameMode'] or message.get('paused') is True
             if self.paused: self.visualizer(False)
@@ -119,7 +140,11 @@ class Worker:
         try:
             while True:
                 now = time.monotonic()
-                delay = min(max(0, self.next_fast - now), max(0, self.next_gpu - now)) if not self.paused else 30
+                deadlines=[]
+                if not self.paused:
+                    if self.fast_enabled:deadlines.append(max(0,self.next_fast-now))
+                    if self.gpu_enabled:deadlines.append(max(0,self.next_gpu-now))
+                delay=min(deadlines,default=30)
                 if self.art: delay = min(delay, 0.1)
                 readers = [sys.stdin.fileno()]
                 if self.cava: readers.append(self.cava.stdout.fileno())
@@ -152,15 +177,15 @@ class Worker:
                 if self.art and self.art.done():
                     try: result = self.art.result()
                     except Exception: result = {'source':'', 'status':'unavailable'}
-                    emit('art', request=self.art_id, **result)
+                    if not self.art_cancelled:emit('art', request=self.art_id, **result)
                     self.art = None
                     if self.pending_art:
                         message, self.pending_art = self.pending_art, None
                         self.request_art(message)
                 now = time.monotonic()
-                if not self.paused and now >= self.next_fast:
+                if not self.paused and self.fast_enabled and now >= self.next_fast:
                     self.sample_fast(); self.next_fast = time.monotonic() + self.settings['fastInterval']
-                if not self.paused and now >= self.next_gpu:
+                if not self.paused and self.gpu_enabled and now >= self.next_gpu:
                     self.sample_gpu(); self.next_gpu = time.monotonic() + self.settings['gpuInterval']
         finally:
             self.stop_cava()
@@ -168,6 +193,7 @@ class Worker:
 
 
 if __name__ == '__main__':
+    close_inherited_fds()
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try: Worker().run()
     except (BrokenPipeError, KeyboardInterrupt): pass

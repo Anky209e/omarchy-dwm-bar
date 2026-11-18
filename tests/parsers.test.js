@@ -27,7 +27,7 @@ for (const bad of [null, {available:true,gpu:101,temperature:48}, {available:tru
   assert.equal(model.gpu(bad).available, false);
 assert.deepEqual(model.gpu({available:true,gpu:42,temperature:-1}),{available:true,gpu:42,temperature:-1});
 assert.deepEqual(model.gpu({available:true,gpu:-1,temperature:54}),{available:true,gpu:-1,temperature:54});
-const parse = execute('widgets/status/ThemePalette.qml', 'parse');
+const parse = execute('services/ThemePalette.qml', 'parse');
 const palette = {values: {}};
 parse.call(palette, 'green = "#9ece6a"\ncyan = "#449dab"\nblue = "<img src=x>"');
 assert.equal(palette.values.green, '#9ece6a');
@@ -35,9 +35,7 @@ assert.equal(palette.values.cyan, '#449dab');
 assert.equal(palette.values.blue, undefined);
 parse.call(palette, 'x'.repeat(65536) + '\nred = "#ff0000"');
 assert.equal(palette.values.red, undefined);
-for (const plugin of ['music', 'indicators', 'temperature']) {
-  assert.equal(fs.readFileSync(path.join(root, 'widgets', plugin, 'ThemePalette.qml'), 'utf8'), fs.readFileSync(path.join(root, 'widgets/status/ThemePalette.qml'), 'utf8'));
-}
+
 const music = fs.readFileSync(path.join(root, 'widgets/music/Music.qml'), 'utf8');
 assert(/textFormat:\s*Text\.PlainText/.test(music));
 assert(!music.match(/tooltipText:\s*root\.player/));

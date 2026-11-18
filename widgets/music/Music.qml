@@ -24,7 +24,7 @@ BarWidget {
   implicitWidth:Math.max(Style.space(64), Math.min(Style.space(telemetry?telemetry.settings.musicWidth:240), screen ? screen.width * 0.14 : Style.space(240)))
   implicitHeight:barSize
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
-  ThemePalette {id:themePalette}
+  readonly property var themePalette: telemetry ? telemetry.themePalette : ({green:Commons.Color.accent,blue:Commons.Color.accent,magenta:Commons.Color.accent,cyan:Commons.Color.accent,yellow:Commons.Color.accent,red:Commons.Color.urgent,muted:Commons.Color.bar.text})
   component TransportButton: StateButton {
     property bool primary: false
     width: Style.space(primary ? 64 : 44)
@@ -40,7 +40,7 @@ BarWidget {
   function timeLabel(seconds){var n=Math.max(0,Math.floor(Number(seconds)||0));return Commons.I18n.formatNumber(Math.floor(n/60))+":"+Commons.I18n.formatNumber(n%60).padStart(2,Commons.I18n.formatNumber(0))}
   function toggleLoop(){if(player && player.loopSupported)player.loopState=player.loopState===MprisLoopState.None?MprisLoopState.Playlist:player.loopState===MprisLoopState.Playlist?MprisLoopState.Track:MprisLoopState.None}
   onPlayerChanged:position=player && player.positionSupported?player.position:0
-  Connections {target:root.player;ignoreUnknownSignals:true;function onPositionChanged(){if(root.opened && !progress.dragging && root.player)root.position=root.player.position}}
+  Connections {target:root.player;ignoreUnknownSignals:true;function onPositionChanged(){if(root.opened && (!panel.loadedContent || !panel.loadedContent.progressDragging) && root.player)root.position=root.player.position}}
   onOpenedChanged:{if(telemetry)telemetry.setMusicOpen(monitorName,opened);if(player)position=player.position}
   onVisibleChanged:if(!visible)close()
   Component.onDestruction:if(telemetry)telemetry.setMusicOpen(monitorName,false)
@@ -68,12 +68,14 @@ BarWidget {
   }
   KeyboardPanel {
     id:panel
-    focusTarget: column
+    focusTarget: panel.loadedContent
     anchorItem:button;owner:musicPanelOwner;bar:root.bar;open:root.opened
     contentWidth:Style.space(400)
-    contentHeight:fittedContentHeight(column.implicitHeight)
+    contentHeight:fittedContentHeight(panel.loadedContentHeight)
+    content: Component {
     Column {
       id:column
+      readonly property bool progressDragging:progress.dragging
       Keys.onEscapePressed: root.close()
       width:parent.width
       spacing:Style.space(12)
@@ -202,6 +204,7 @@ BarWidget {
           onClicked:root.telemetry.save({remoteArtwork:!root.telemetry.settings.remoteArtwork})
         }
       }
+    }
     }
   }
 }

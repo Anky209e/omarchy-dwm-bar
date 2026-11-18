@@ -220,3 +220,11 @@ GPU load and temperature are independent: a missing sensor does not discard anot
 Monitor clicks use `nvtop` for GPU monitoring when installed, otherwise `btop`, `htop`, then `top`. The settings panel reports the selected vendor and tools. Missing cava disables visualization, while music controls remain usable. Run `python -B scripts/doctor.py` from a checkout for read-only dependency, host API-file and GPU-discovery diagnostics; this is optional troubleshooting, not an install step.
 
 Automated fixtures cover AMD, Intel temperature-only, NVIDIA PCI selection, missing sensors and sleep protection. Real AMD/Intel hardware, a clean Omarchy machine and physical device transitions remain unverified. CI runs the portable tests on pushes and pull requests; QML integration still needs Omarchy's graphical shell. Only the documented Omarchy/Quickshell combination is currently verified.
+
+## Resource lifetime (2.6.1)
+
+One shared palette watches the theme file for all outputs. Settings, music and drawer content is built only on first open and retained for fast reopening. CPU/RAM and GPU polling stop independently when no Full output displays the corresponding readings; enabling them requests an immediate sample. Manual refresh remains available. Visible polling rates and visualizer frame rate are unchanged.
+
+Closing the music panel cancels queued artwork requests and discards their results. An already-running fetch can finish within its existing network limits. Unrelated settings changes no longer reload the same cover. Cava stops and is reaped on close, pause or shutdown. The persistent worker closes inherited descriptors above stderr at startup so shell graphics handles are not retained by the reader.
+
+A local 20-cycle panel test found shell file descriptors stable at 219 and no steady RSS growth after warm-up. After descriptor cleanup, a further 10-cycle test left the worker with only stdin/stdout/stderr and no children after panel close. These short observations do not prove the absence of long-term leaks, and shell memory includes all loaded plugins. One persistent worker remains intentional: replacing it with repeated Python launches would add overhead.
