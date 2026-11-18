@@ -11,7 +11,7 @@ import sys
 import tempfile
 import time
 
-from artwork import fetch
+from artwork import fetch, secure_existing_cache
 from preferences import load, normalize, save
 from telemetry import hardware
 from sensors import read_gpu
@@ -194,6 +194,9 @@ class Worker:
 
 if __name__ == '__main__':
     close_inherited_fds()
+    try:secure_existing_cache()
+    except (OSError,ValueError):
+        print('Artwork cache permissions could not be secured; artwork requests will fail closed.',file=sys.stderr)
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try: Worker().run()
     except (BrokenPipeError, KeyboardInterrupt): pass

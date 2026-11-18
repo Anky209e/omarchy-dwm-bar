@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.2
+
+- Fix local artwork disclosure: owner-only cache directory and atomically written owner-only files, independent of umask.
+- Repair legacy image/temporary permissions at worker startup and before reuse. Reject unsafe cache symlinks and fail closed on permission errors.
+- Add regressions for private local covers with remote art disabled, legacy cache hits, startup repair and symlink rejection.
+
 ## 2.6.1
 
 - Share one theme watcher and lazily build music, settings and drawer contents.

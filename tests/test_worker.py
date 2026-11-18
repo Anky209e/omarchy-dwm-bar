@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import select
 import struct
+import stat
 import subprocess
 import sys
 import tempfile
@@ -124,6 +125,64 @@ class ArtworkTests(unittest.TestCase):
                 self.assertEqual(artwork.fetch(url,True,cache)['status'],'unsupported')
                 opener.assert_not_called()
 
+    def test_private_local_cover_stays_private_with_remote_disabled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'private.png';source.write_bytes(self.png());source.chmod(0o600)
+            cache=root/'accessible'/'art';cache.mkdir(parents=True);cache.chmod(0o755)
+            previous=os.umask(0o022)
+            try:
+                with patch.object(artwork,'build_opener') as network:
+                    result=artwork.fetch(source.as_uri(),False,cache)
+                    network.assert_not_called()
+            finally:os.umask(previous)
+            self.assertEqual(result['status'],'ok')
+            from urllib.parse import urlsplit,unquote
+            target=Path(unquote(urlsplit(result['source']).path))
+            self.assertEqual(stat.S_IMODE(cache.stat().st_mode),0o700)
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode),0o600)
+            self.assertEqual(stat.S_IMODE(source.stat().st_mode),0o600)
+            self.assertEqual(target.read_bytes(),source.read_bytes())
+            self.assertEqual(list(cache.glob('.cover-*')),[])
+
+    def test_legacy_cache_hit_and_temporary_permissions_are_repaired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory);cache.chmod(0o755);url='https://i.scdn.co/image/existing'
+            target=cache/(hashlib.sha256(url.encode()).hexdigest()+'.img')
+            target.write_bytes(self.png());target.chmod(0o644)
+            legacy=cache/('a'*64+'.tmp');legacy.write_bytes(self.png());legacy.chmod(0o644)
+            with patch.object(artwork,'build_opener') as network:
+                self.assertEqual(artwork.fetch(url,True,cache)['status'],'ok');network.assert_not_called()
+            self.assertEqual(stat.S_IMODE(cache.stat().st_mode),0o700)
+            for file in [target,legacy]:self.assertEqual(stat.S_IMODE(file.stat().st_mode),0o600)
+
+    def test_startup_repairs_cache_without_fetching_artwork(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory)/'omarchy/dwm-bar/art';cache.mkdir(parents=True);cache.chmod(0o755)
+            image=cache/('b'*64+'.img');image.write_bytes(self.png());image.chmod(0o644)
+            with patch.dict(os.environ,{'XDG_CACHE_HOME':directory}), patch.object(artwork,'build_opener') as network:
+                artwork.secure_existing_cache();network.assert_not_called()
+            self.assertEqual(stat.S_IMODE(cache.stat().st_mode),0o700)
+            self.assertEqual(stat.S_IMODE(image.stat().st_mode),0o600)
+
+    def test_symlink_cache_directory_is_rejected_without_chmod_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'cover.png';source.write_bytes(self.png())
+            actual=root/'actual';actual.mkdir();actual.chmod(0o755)
+            cache=root/'cache';cache.symlink_to(actual,target_is_directory=True)
+            self.assertEqual(artwork.fetch(source.as_uri(),False,cache)['status'],'unavailable')
+            self.assertEqual(stat.S_IMODE(actual.stat().st_mode),0o755)
+            self.assertEqual(list(actual.iterdir()),[])
+
+    def test_private_temp_file_does_not_follow_legacy_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'cover.png';source.write_bytes(self.png())
+            other=root/'untouched';other.write_bytes(b'private');other.chmod(0o600)
+            cache=root/'cache';cache.mkdir()
+            name=hashlib.sha256(self.png()).hexdigest()+'.tmp';(cache/name).symlink_to(other)
+            self.assertEqual(artwork.fetch(source.as_uri(),False,cache)['status'],'unavailable')
+            self.assertEqual(other.read_bytes(),b'private')
+            self.assertEqual(stat.S_IMODE(other.stat().st_mode),0o600)
+
     def test_local_cover_is_bounded_and_cached(self):
         with tempfile.TemporaryDirectory(prefix='dwm-art-') as directory:
             root = Path(directory);cover = root / 'cover.png';cache = root / 'cache'
@@ -186,7 +245,7 @@ class ResourceTests(unittest.TestCase):
 class PersistentWorkerTests(unittest.TestCase):
     def test_one_process_handles_configuration_refresh_pause_and_shutdown(self):
         with tempfile.TemporaryDirectory(prefix='dwm-worker-') as directory:
-            env = dict(os.environ, XDG_CONFIG_HOME=directory, PYTHONDONTWRITEBYTECODE='1')
+            env = dict(os.environ, XDG_CONFIG_HOME=directory, XDG_CACHE_HOME=directory, PYTHONDONTWRITEBYTECODE='1')
             process = subprocess.Popen([sys.executable,'-u',str(SERVICES/'worker.py')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,bufsize=0)
             buffer=b''
             def event(wanted, timeout=5):
