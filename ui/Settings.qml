@@ -15,6 +15,7 @@ BarWidget {
   property bool confirmReset: false
   readonly property string monitorName: root.QsWindow.window && root.QsWindow.window.screen ? root.QsWindow.window.screen.name : ""
   visible: !telemetry || telemetry.modeFor(monitorName) !== "hidden"
+  readonly property int openPanelIndicatorWidth:Style.space(12)
   implicitWidth: button.implicitWidth
   implicitHeight: barSize
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }

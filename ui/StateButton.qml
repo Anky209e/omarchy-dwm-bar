@@ -12,8 +12,9 @@ Button {
   Rectangle {
     visible: root.selected
     anchors.bottom: parent.bottom
+    anchors.bottomMargin: Math.max(root.borderBottom, Style.space(2))
     anchors.horizontalCenter: parent.horizontalCenter
-    width: Math.min(parent.width / 3, Style.space(24))
+    width: Math.min(parent.width / 3, Style.space(12))
     height: Style.space(2)
     color: Commons.Color.accent
   }

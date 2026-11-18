@@ -22,6 +22,7 @@ BarWidget {
   readonly property string album:player?String(player.trackAlbum || "").slice(0,256):""
   visible:!telemetry || (telemetry.modeFor(monitorName)!=="hidden" && telemetry.settings.showMusic)
   implicitWidth:Math.max(Style.space(64), Math.min(Style.space(telemetry?telemetry.settings.musicWidth:240), screen ? screen.width * 0.14 : Style.space(240)))
+  readonly property int openPanelIndicatorWidth:Style.space(12)
   implicitHeight:barSize
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
   ThemePalette {id:themePalette}
@@ -51,7 +52,7 @@ BarWidget {
     bar:root.bar;text:"music";labelVisible:false;pressScale:1
     tooltipText:strings.t("hint")
     onPressed:function(mouseButton){if(mouseButton===Qt.RightButton)root.playPause();else if(mouseButton===Qt.MiddleButton){if(root.player && root.player.canGoNext)root.player.next()}else root.opened=!root.opened}
-    Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:Style.space(2); visible:root.playing || root.opened; color:root.playing?themePalette.green:Commons.Color.accent }
+    Rectangle { anchors.bottom:parent.bottom; anchors.bottomMargin:Style.space(2); anchors.horizontalCenter:parent.horizontalCenter; width:root.openPanelIndicatorWidth; height:Style.space(2); visible:root.playing && !root.opened; color:themePalette.green }
     Text {
       anchors.fill:parent;anchors.leftMargin:Style.space(6);anchors.rightMargin:Style.space(6)
       verticalAlignment:Text.AlignVCenter;textFormat:Text.PlainText;elide:Text.ElideRight

@@ -25,6 +25,7 @@ BarWidget {
     opacity: active ? 1 : 0.6
     Rectangle {
       anchors.bottom: parent.bottom
+      anchors.bottomMargin: Style.space(2)
       anchors.horizontalCenter: parent.horizontalCenter
       width: Style.space(12); height: Style.space(2)
       visible: parent.active

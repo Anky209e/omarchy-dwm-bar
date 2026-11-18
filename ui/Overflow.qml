@@ -15,13 +15,34 @@ BarWidget {
   signal launch(string id,string monitor)
   readonly property string monitorName:root.QsWindow.window && root.QsWindow.window.screen?root.QsWindow.window.screen.name:""
   visible:telemetry && telemetry.modeFor(monitorName)==="full" && telemetry.compactFor(monitorName)
-  implicitWidth:button.implicitWidth
+  readonly property int openPanelIndicatorWidth:Style.space(12)
+  implicitWidth:Style.bar.statusSlot
   implicitHeight:barSize
   function open(){opened=true}
   function close(){opened=false}
   onVisibleChanged:if(!visible)close()
   Commons.Translations {id:strings;directory:Qt.resolvedUrl("i18n")}
-  WidgetButton {id:button;bar:root.bar;text:"󰇘";pressScale:1;active:root.opened;activeColor:Commons.Color.accent;tooltipText:strings.t("overflow");onPressed:root.opened=!root.opened}
+  WidgetButton {
+    id:button
+    anchors.fill:parent
+    fixedWidth:Style.bar.statusSlot
+    fixedHeight:root.barSize
+    bar:root.bar;text:"󰇘";labelVisible:false;pressScale:1
+    active:root.opened;activeColor:Commons.Color.accent
+    tooltipText:strings.t("overflow")
+    onPressed:root.opened=!root.opened
+    Row {
+      anchors.centerIn:parent
+      spacing:Style.space(3)
+      Repeater {
+        model:3
+        Rectangle {
+          width:Style.space(2);height:width;radius:width/2
+          color:root.opened?Commons.Color.accent:Commons.Color.bar.text
+        }
+      }
+    }
+  }
   KeyboardPanel {
     anchorItem:button;bar:root.bar;owner:root;open:root.opened
     contentWidth:Style.space(330)
