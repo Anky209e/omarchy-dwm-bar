@@ -80,10 +80,24 @@ Item {
     for (var j=0;j<players.length;j++) if(players[j].trackTitle) return players[j]
     return players.length ? players[0] : null
   }
+  property int liveTrayFrames:0
+  property var trayPixmapSources: ({})
+  property var trayPixmapPending: ({})
+  function trayPixmapSource(raw,identity,attention) {
+    if(!/^(?:image:\/\/(?:qsimage|qspixmap)\/)[0-9]+(?:\/[0-9]+)?$/.test(raw) || !identity || identity.length>256)return ""
+    var key="item:"+identity,request=raw+(attention?":attention":":normal"),old=trayPixmapSources[key]
+    if(old && old.request===request)return old.source
+    if(trayPixmapPending[key]!==request && (old || trayPixmapPending[key] || Object.keys(trayPixmapSources).length+Object.keys(trayPixmapPending).length<64)) {
+      trayPixmapPending[key]=request
+      send({command:"trayPixmap",identity:identity,request:request,attention:attention===true})
+    }
+    return old?old.source:""
+  }
   property var trayIconSources: ({})
   property var trayIconPending: ({})
-  function trayIconSource(value) {
+  function trayIconSource(value,identity,attention) {
     var raw=String(value || ""),policy=TrayIconPolicy.classify(raw)
+    if(raw.indexOf("image://qspixmap/")===0 || raw.indexOf("image://qsimage/")===0)return trayPixmapSource(raw,String(identity || ""),attention)
     if(!policy.local)return policy.source
     if(Object.prototype.hasOwnProperty.call(trayIconSources,raw))return trayIconSources[raw] || policy.source
     if(!trayIconPending[raw] && Object.keys(trayIconPending).length<32 && Object.keys(trayIconSources).length+Object.keys(trayIconPending).length<64) {
@@ -165,7 +179,15 @@ Item {
     if(line.length>65536)return
     try {
       var data=JSON.parse(line)
-      if(data.event==="trayIcon" && typeof data.icon==="string" && data.icon.length<=4096 && trayIconPending[data.icon]) {
+      if(data.event==="trayPixmap" && typeof data.identity==="string" && data.identity.length<=256) {
+        var key="item:"+data.identity
+        if(trayPixmapPending[key]!==data.request)return
+        delete trayPixmapPending[key]
+        var pixmaps={};for(var entry in trayPixmapSources)pixmaps[entry]=trayPixmapSources[entry]
+        pixmaps[key]={request:data.request,source:typeof data.source==="string" && data.source.indexOf("file://")===0?data.source:""}
+        trayPixmapSources=pixmaps
+        if(pixmaps[key].source!=="")liveTrayFrames++
+      } else if(data.event==="trayIcon" && typeof data.icon==="string" && data.icon.length<=4096 && trayIconPending[data.icon]) {
         delete trayIconPending[data.icon]
         var icons={},keys=Object.keys(trayIconSources)
         for(var i=0;i<keys.length;i++)icons[keys[i]]=trayIconSources[keys[i]]
@@ -203,7 +225,7 @@ Item {
     stdinEnabled:true
     running:true
     stdout:SplitParser { onRead:function(line){root.apply(line)} }
-    onStarted: { root.trayIconPending=({});root.trayIconSources=({});root.syncWorker() }
+    onStarted: { root.trayIconPending=({});root.trayIconSources=({});root.trayPixmapPending=({});root.trayPixmapSources=({});root.syncWorker() }
     onExited: { root.fastState="error";root.gpuState="error";root.restartCount++;restart.interval=Math.min(30000,1000*Math.pow(2,Math.min(5,root.restartCount)));restart.restart() }
   }
   Timer { id:restart;onTriggered:worker.running=true }
@@ -214,7 +236,7 @@ Item {
   Timer { interval:5000;running:true;repeat:true;triggeredOnStart:true;onTriggered:root.refreshRecording() }
   ShellIpc {
     target:"dwm.bar"
-    function telemetry():string {return JSON.stringify({fastWanted:root.fastWanted,gpuWanted:root.gpuWanted,hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,capabilities:root.capabilities,gpuVendor:root.gpuVendor,gpuDevice:root.gpuDevice,backendRunning:worker.running})}
+    function telemetry():string {return JSON.stringify({fastWanted:root.fastWanted,gpuWanted:root.gpuWanted,hardwarePaused:root.hardwarePaused,gameMode:root.hardwarePaused,fastRequests:root.fastRequests,gpuRequests:root.gpuRequests,cpu:root.hardware.cpu,ram:root.hardware.ram,gpu:root.gpu.gpu,temperature:root.gpu.temperature,volume:root.volumePercent,hardwareStatus:root.hardwareStatus,gpuStatus:root.gpuStatus,visualizer:root.spectrumState,artwork:root.artState,musicOpen:root.musicOpen,liveTrayFrames:root.liveTrayFrames,capabilities:root.capabilities,gpuVendor:root.gpuVendor,gpuDevice:root.gpuDevice,backendRunning:worker.running})}
     function refresh():void{root.refreshHardware()}
     function preferences():string{return JSON.stringify(root.settings)}
     function reloadSettings():void{root.send({command:"reload"})}

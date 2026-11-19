@@ -11,7 +11,7 @@ sys.path.insert(0,str(repo/'services'))
 from sensors import VENDORS, devices, power
 
 required=['python','quickshell','omarchy','omarchy-shell','wpctl']
-optional=['btop','htop','top','nvtop','cava','nvidia-smi']
+optional=['btop','htop','top','nvtop','cava','nvidia-smi','busctl']
 report={'required':{name:bool(shutil.which(name)) for name in required},
         'optional':{name:bool(shutil.which(name)) for name in optional},
         'hostFiles':{name:(Path('/usr/share/omarchy/shell')/name).is_file() for name in ['plugins/bar/Bar.qml','plugins/bar/BarModel.js','Ui/KeyboardPanel.qml','Ui/WidgetButton.qml']},

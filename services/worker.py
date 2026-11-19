@@ -16,6 +16,7 @@ from preferences import load, normalize, save
 from telemetry import hardware
 from sensors import read_gpu
 from tray_icons import resolve as resolve_tray_icon
+from tray_pixmaps import resolve as resolve_tray_pixmap
 
 
 
@@ -47,6 +48,9 @@ class Worker:
         self.pending_art = None
         self.art_cancelled = False
         self.tray_jobs = {}
+        self.pixmap_executor=concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.pixmap_jobs={}
+        self.pixmap_pending={}
 
     def send_settings(self):
         emit('settings', values=self.settings)
@@ -100,7 +104,14 @@ class Worker:
 
     def command(self, message):
         command = message.get('command')
-        if command == 'trayIcon':
+        if command == 'trayPixmap':
+            identity,request=message.get('identity'),message.get('request')
+            if isinstance(identity,str) and 0<len(identity)<=256 and isinstance(request,str) and len(request)<=256:
+                if identity in self.pixmap_jobs:self.pixmap_pending[identity]=message
+                elif len(self.pixmap_jobs)<16:
+                    self.pixmap_jobs[identity]=(request,self.pixmap_executor.submit(resolve_tray_pixmap,identity,message.get('attention') is True))
+                else:emit('trayPixmap',identity=identity,request=request,source='')
+        elif command == 'trayIcon':
             raw=message.get('icon')
             if isinstance(raw,str) and 0<len(raw)<=4096 and raw not in self.tray_jobs:
                 if len(self.tray_jobs)<32:self.tray_jobs[raw]=self.executor.submit(resolve_tray_icon,raw)
@@ -153,6 +164,7 @@ class Worker:
                     if self.gpu_enabled:deadlines.append(max(0,self.next_gpu-now))
                 delay=min(deadlines,default=30)
                 if self.art or self.tray_jobs: delay = min(delay, 0.1)
+                if self.pixmap_jobs:delay=min(delay,.02)
                 readers = [sys.stdin.fileno()]
                 if self.cava: readers.append(self.cava.stdout.fileno())
                 ready, _, _ = select.select(readers, [], [], delay)
@@ -181,6 +193,14 @@ class Worker:
                             bars = self.cava_buffer[(frames-1)*16:frames*16]
                             self.cava_buffer = self.cava_buffer[frames*16:]
                             emit('spectrum', bars=[round(value/255, 3) for value in bars], status='ok')
+                for identity,(request,future) in list(self.pixmap_jobs.items()):
+                    if not future.done():continue
+                    try:source=future.result()
+                    except Exception:source=''
+                    emit('trayPixmap',identity=identity,request=request,source=source)
+                    del self.pixmap_jobs[identity]
+                    pending=self.pixmap_pending.pop(identity,None)
+                    if pending:self.command(pending)
                 for raw,future in list(self.tray_jobs.items()):
                     if not future.done():continue
                     try:source=future.result()
@@ -203,6 +223,7 @@ class Worker:
         finally:
             self.stop_cava()
             self.executor.shutdown(wait=False, cancel_futures=True)
+            self.pixmap_executor.shutdown(wait=False,cancel_futures=True)
 
 
 if __name__ == '__main__':

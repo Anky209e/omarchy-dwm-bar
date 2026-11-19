@@ -42,11 +42,19 @@ def resolve(raw,cache=None):
             data=read_image(path)
             size=dimensions(data)
             if len(data)>LIMIT or not size or not all(0<side<=1024 for side in size):continue
-            target=cache/(hashlib.sha256(data).hexdigest()+'.img')
-            with private_cache(cache) as directory:
-                write_private(directory,target,data)
-                images=sorted(cache.glob('*.img'),key=lambda f:f.stat().st_mtime)
-                for old in images[:-64]:old.unlink(missing_ok=True)
-            return target.as_uri()
+            return cache_raster(data,cache)
         except (OSError,ValueError):continue
     return ''
+
+
+def cache_raster(data,cache=None):
+    if not isinstance(data,bytes) or len(data)>LIMIT:return ''
+    size=dimensions(data)
+    if not size or not all(0<side<=1024 for side in size):return ''
+    cache=cache or default_cache().parent/'tray'
+    target=cache/(hashlib.sha256(data).hexdigest()+'.img')
+    with private_cache(cache) as directory:
+        write_private(directory,target,data)
+        images=sorted(cache.glob('*.img'),key=lambda f:f.stat().st_mtime)
+        for old in images[:-64]:old.unlink(missing_ok=True)
+    return target.as_uri()

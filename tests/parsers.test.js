@@ -52,7 +52,7 @@ for(const raw of ['image://qspixmap/1/2','image://qsimage/42','https://example.i
 const trayQml=fs.readFileSync(path.join(root,'widgets/tray/Tray.qml'),'utf8');
 assert(!trayQml.includes('source: menuRow.modelData.icon'));
 assert(trayQml.includes('source: root.trayIconSource(menuRow.modelData.icon)'));
-assert(trayQml.includes('source: root.trayIconSource(trayIconRoot.icon, trayIconRoot.applicationIcon)'));
+assert(trayQml.includes('source: root.trayIconSource(trayIconRoot.icon, trayIconRoot.applicationIcon, trayIconRoot.identity, trayIconRoot.attention)'));
 console.log('Tray icon policy passed: no client path or unchecked provider reaches an Image source.');
 
 const trayModel=require('../widgets/tray/TrayModel.js');

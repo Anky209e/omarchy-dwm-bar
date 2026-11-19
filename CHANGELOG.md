@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.6
+
+- Restore live StatusNotifier bitmap states, including Discord microphone/voice-chat icons, without reopening untrusted file paths.
+- Retrieve bounded D-Bus pixel arrays on tray revision changes, coalesce updates and generate private PNG frames in the background.
+- Keep installed-logo fallback when original bitmap data is unavailable.
+
 ## 2.6.5
 
 - Prevent tray clients from passing local paths to synchronous Quickshell image providers.
