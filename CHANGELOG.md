@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.5
+
+- Prevent tray clients from passing local paths to synchronous Quickshell image providers.
+- Stage validated local PNG/JPEG icons privately in the background; reject special files and unsafe providers across every tray image sink.
+- Bound request queues and cache results; retain tray actions with a neutral placeholder for unsupported icons.
+- Add FIFO/device/symlink/path-replacement and worker-IPC security regressions.
+
 ## 2.6.4
 
 - Hide empty drawers when all corner controls are disabled, and omit empty application-tray headings.

@@ -8,6 +8,7 @@ import Quickshell.Services.Mpris
 import qs.Commons
 import "TelemetryModel.js" as Model
 import "WorkspaceModel.js" as WorkspaceModel
+import "TrayIconPolicy.js" as TrayIconPolicy
 
 Item {
   id: root
@@ -78,6 +79,18 @@ Item {
     for (var i=0;i<players.length;i++) if(players[i].isPlaying) return players[i]
     for (var j=0;j<players.length;j++) if(players[j].trackTitle) return players[j]
     return players.length ? players[0] : null
+  }
+  property var trayIconSources: ({})
+  property var trayIconPending: ({})
+  function trayIconSource(value) {
+    var raw=String(value || ""),policy=TrayIconPolicy.classify(raw)
+    if(!policy.local)return policy.source
+    if(Object.prototype.hasOwnProperty.call(trayIconSources,raw))return trayIconSources[raw] || policy.source
+    if(!trayIconPending[raw] && Object.keys(trayIconPending).length<32 && Object.keys(trayIconSources).length+Object.keys(trayIconPending).length<64) {
+      trayIconPending[raw]=true
+      send({command:"trayIcon",icon:raw})
+    }
+    return policy.source
   }
   property var keyboards: ({})
   function reportKeyboard(name,state) {
@@ -152,7 +165,13 @@ Item {
     if(line.length>65536)return
     try {
       var data=JSON.parse(line)
-      if(data.event==="capabilities") {
+      if(data.event==="trayIcon" && typeof data.icon==="string" && data.icon.length<=4096 && trayIconPending[data.icon]) {
+        delete trayIconPending[data.icon]
+        var icons={},keys=Object.keys(trayIconSources)
+        for(var i=0;i<keys.length;i++)icons[keys[i]]=trayIconSources[keys[i]]
+        icons[data.icon]=typeof data.source==="string" && data.source.indexOf("file://")===0?data.source:""
+        trayIconSources=icons
+      } else if(data.event==="capabilities") {
         var next={};for(var key in data.values)if(["btop","htop","top","nvtop","cava","nvidia-smi"].indexOf(key)>=0)next[key]=data.values[key]===true
         capabilities=next
       } else if(data.event==="settings") {
@@ -184,7 +203,7 @@ Item {
     stdinEnabled:true
     running:true
     stdout:SplitParser { onRead:function(line){root.apply(line)} }
-    onStarted: { root.syncWorker() }
+    onStarted: { root.trayIconPending=({});root.trayIconSources=({});root.syncWorker() }
     onExited: { root.fastState="error";root.gpuState="error";root.restartCount++;restart.interval=Math.min(30000,1000*Math.pow(2,Math.min(5,root.restartCount)));restart.restart() }
   }
   Timer { id:restart;onTriggered:worker.running=true }

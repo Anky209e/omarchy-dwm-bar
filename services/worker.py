@@ -15,6 +15,7 @@ from artwork import fetch, secure_existing_cache
 from preferences import load, normalize, save
 from telemetry import hardware
 from sensors import read_gpu
+from tray_icons import resolve as resolve_tray_icon
 
 
 
@@ -45,6 +46,7 @@ class Worker:
         self.art = None
         self.pending_art = None
         self.art_cancelled = False
+        self.tray_jobs = {}
 
     def send_settings(self):
         emit('settings', values=self.settings)
@@ -98,7 +100,12 @@ class Worker:
 
     def command(self, message):
         command = message.get('command')
-        if command == 'demand':
+        if command == 'trayIcon':
+            raw=message.get('icon')
+            if isinstance(raw,str) and 0<len(raw)<=4096 and raw not in self.tray_jobs:
+                if len(self.tray_jobs)<32:self.tray_jobs[raw]=self.executor.submit(resolve_tray_icon,raw)
+                else:emit('trayIcon',icon=raw,source='')
+        elif command == 'demand':
             fast, gpu = message.get('fast') is True, message.get('gpu') is True
             if fast and not self.fast_enabled:self.next_fast=time.monotonic()
             if gpu and not self.gpu_enabled:self.next_gpu=time.monotonic()
@@ -145,7 +152,7 @@ class Worker:
                     if self.fast_enabled:deadlines.append(max(0,self.next_fast-now))
                     if self.gpu_enabled:deadlines.append(max(0,self.next_gpu-now))
                 delay=min(deadlines,default=30)
-                if self.art: delay = min(delay, 0.1)
+                if self.art or self.tray_jobs: delay = min(delay, 0.1)
                 readers = [sys.stdin.fileno()]
                 if self.cava: readers.append(self.cava.stdout.fileno())
                 ready, _, _ = select.select(readers, [], [], delay)
@@ -174,6 +181,12 @@ class Worker:
                             bars = self.cava_buffer[(frames-1)*16:frames*16]
                             self.cava_buffer = self.cava_buffer[frames*16:]
                             emit('spectrum', bars=[round(value/255, 3) for value in bars], status='ok')
+                for raw,future in list(self.tray_jobs.items()):
+                    if not future.done():continue
+                    try:source=future.result()
+                    except Exception:source=''
+                    emit('trayIcon',icon=raw,source=source)
+                    del self.tray_jobs[raw]
                 if self.art and self.art.done():
                     try: result = self.art.result()
                     except Exception: result = {'source':'', 'status':'unavailable'}

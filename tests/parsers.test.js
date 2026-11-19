@@ -40,3 +40,17 @@ const music = fs.readFileSync(path.join(root, 'widgets/music/Music.qml'), 'utf8'
 assert(/textFormat:\s*Text\.PlainText/.test(music));
 assert(!music.match(/tooltipText:\s*root\.player/));
 console.log('Parser checks passed: shared CPU deltas, resume baseline, manual samples, combined GPU/temperature, bounded palette and markup-shaped input.');
+
+const trayPolicy=require('../services/TrayIconPolicy.js');
+assert.deepEqual(trayPolicy.classify('image://icon/steam?path=/tmp/icons'),{source:'image://icon/steam',local:true});
+assert.deepEqual(trayPolicy.classify('network-wireless-symbolic'),{source:'image://icon/network-wireless-symbolic',local:false});
+assert.deepEqual(trayPolicy.classify('image://icon/steam?fallback=/tmp/pipe'),{source:'image://icon/steam',local:false});
+for(const raw of ['image://icon//tmp/pipe','image://icon/%2ftmp%2fpipe','/tmp/pipe','file:///tmp/pipe']) {
+ const policy=trayPolicy.classify(raw);assert.equal(policy.source,'');assert(policy.local);
+}
+for(const raw of ['image://qspixmap/1/2','image://qsimage/42','https://example.invalid/a.png','image://icon/%ZZ','image://icon/%252ftmp%252fpipe','image://unknown/file','x'.repeat(4097),'image://icon/a\u0000'])assert.equal(trayPolicy.classify(raw).source,'');
+const trayQml=fs.readFileSync(path.join(root,'widgets/tray/Tray.qml'),'utf8');
+assert(!trayQml.includes('source: menuRow.modelData.icon'));
+assert(trayQml.includes('source: root.trayIconSource(menuRow.modelData.icon)'));
+assert(trayQml.includes('source: root.trayIconSource(trayIconRoot.icon)'));
+console.log('Tray icon policy passed: no client path or unchecked provider reaches an Image source.');

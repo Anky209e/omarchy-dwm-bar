@@ -136,12 +136,7 @@ BarWidget {
   }
 
   function trayIconSource(icon) {
-    // Quickshell already resolves the tray icon into a ready-to-use image://
-    // URL, including a "?path=" fallback search dir for apps that ship their
-    // tray icon outside a standard theme (e.g. Steam's flat public/ dir). Hand
-    // it straight to IconImage; guessing a theme sub-directory here only broke
-    // apps whose layout didn't match the guess.
-    return String(icon || "")
+    return telemetry ? telemetry.trayIconSource(icon) : ""
   }
 
   // Symbolic icons ship a fixed fill (often near-white) that the host is meant
@@ -736,7 +731,7 @@ BarWidget {
                 // which leaves PNG icons upscaled and blurry on HiDPI displays.
                 sourceSize.width: width * Screen.devicePixelRatio
                 sourceSize.height: height * Screen.devicePixelRatio
-                source: menuRow.modelData.icon
+                source: root.trayIconSource(menuRow.modelData.icon)
               }
 
               Text {
@@ -804,6 +799,7 @@ BarWidget {
       id: trayIconImage
       anchors.fill: parent
       fillMode: Image.PreserveAspectFit
+      asynchronous:true
       // Decode at physical pixels: IconImage uses the logical size,
       // which leaves PNG icons upscaled and blurry on HiDPI displays.
       sourceSize.width: Math.round(Math.min(width, height) * Screen.devicePixelRatio)
@@ -814,6 +810,13 @@ BarWidget {
       layer.enabled: trayIconRoot.symbolic
     }
 
+    Text {
+      anchors.centerIn:parent
+      visible:trayIconImage.source.toString()==="" || trayIconImage.status===Image.Error
+      textFormat:Text.PlainText;text:"󰀻"
+      font.family:root.fontFamily;font.pixelSize:Style.font.bodySmall
+      color:root.foreground
+    }
     MultiEffect {
       anchors.fill: trayIconImage
       source: trayIconImage

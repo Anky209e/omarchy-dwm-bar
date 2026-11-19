@@ -262,6 +262,9 @@ class PersistentWorkerTests(unittest.TestCase):
                 process.stdin.write((json.dumps(value)+'\n').encode());process.stdin.flush()
             try:
                 self.assertFalse(event('settings')['values']['remoteArtwork'])
+                fifo=Path(directory)/'tray-fifo';os.mkfifo(fifo)
+                command(command='trayIcon',icon='image://icon/'+str(fifo))
+                self.assertEqual(event('trayIcon')['source'],'')
                 pid=process.pid
                 command(command='settings',patch={'gpuInterval':9,'remoteArtwork':False})
                 self.assertEqual(event('settings')['values']['gpuInterval'],9)
