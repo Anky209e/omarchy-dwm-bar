@@ -33,6 +33,14 @@ function layoutHasWidget(layout, id) {
 // LocalSend's item shows no state, offers only Open and Quit, and its primary
 // click is a no-op, so Share > Receive is the whole surface. Hiding it by hand
 // doesn't stick either: LocalSend picks a fresh tray id every launch.
+// Identity selects only a fixed installed theme name, never a client path.
+function applicationIcon(item) {
+  if (!item) return ""
+  var id=text(item.id), title=text(item.title)
+  if (/^discord(?:$|[-_ .])/.test(id) || id==="com.discordapp.discord" || title==="discord")return "discord"
+  return ""
+}
+
 function ownedByOmarchy(item, layout) {
   return itemNamed(item, "localsend")
     || (layoutHasWidget(layout, "omarchy.dropbox") && itemNamed(item, "dropbox"))
@@ -40,6 +48,7 @@ function ownedByOmarchy(item, layout) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    applicationIcon: applicationIcon,
     itemNamed: itemNamed,
     entryId: entryId,
     layoutHasWidget: layoutHasWidget,

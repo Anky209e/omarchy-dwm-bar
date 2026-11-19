@@ -52,5 +52,12 @@ for(const raw of ['image://qspixmap/1/2','image://qsimage/42','https://example.i
 const trayQml=fs.readFileSync(path.join(root,'widgets/tray/Tray.qml'),'utf8');
 assert(!trayQml.includes('source: menuRow.modelData.icon'));
 assert(trayQml.includes('source: root.trayIconSource(menuRow.modelData.icon)'));
-assert(trayQml.includes('source: root.trayIconSource(trayIconRoot.icon)'));
+assert(trayQml.includes('source: root.trayIconSource(trayIconRoot.icon, trayIconRoot.applicationIcon)'));
 console.log('Tray icon policy passed: no client path or unchecked provider reaches an Image source.');
+
+const trayModel=require('../widgets/tray/TrayModel.js');
+assert.equal(trayModel.applicationIcon({id:'discord_status_icon_1',title:''}),'discord');
+assert.equal(trayModel.applicationIcon({id:'com.discordapp.Discord'}),'discord');
+assert.equal(trayModel.applicationIcon({id:'/tmp/discord.png',title:'other'}),'');
+assert.equal(trayModel.applicationIcon({id:'image://icon//tmp/fifo'}),'');
+console.log('Discord fallback uses only the fixed installed discord theme icon.');

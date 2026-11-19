@@ -135,8 +135,9 @@ BarWidget {
     trayMenuOpen = true
   }
 
-  function trayIconSource(icon) {
-    return telemetry ? telemetry.trayIconSource(icon) : ""
+  function trayIconSource(icon, applicationIcon) {
+    var source=telemetry ? telemetry.trayIconSource(icon) : ""
+    return source || (applicationIcon==="discord" ? "image://icon/discord" : "")
   }
 
   // Symbolic icons ship a fixed fill (often near-white) that the host is meant
@@ -488,6 +489,7 @@ BarWidget {
             width: 16
             height: 16
             icon: rowRoot.modelData.icon
+            applicationIcon: TrayModel.applicationIcon(rowRoot.modelData)
           }
 
           Text {
@@ -793,6 +795,7 @@ BarWidget {
   component TrayIcon: Item {
     id: trayIconRoot
     required property var icon
+    property string applicationIcon:""
     readonly property bool symbolic: root.iconIsSymbolic(icon)
 
     Image {
@@ -804,7 +807,7 @@ BarWidget {
       // which leaves PNG icons upscaled and blurry on HiDPI displays.
       sourceSize.width: Math.round(Math.min(width, height) * Screen.devicePixelRatio)
       sourceSize.height: Math.round(Math.min(width, height) * Screen.devicePixelRatio)
-      source: root.trayIconSource(trayIconRoot.icon)
+      source: root.trayIconSource(trayIconRoot.icon, trayIconRoot.applicationIcon)
       // Kept as a hidden layer so the effect can sample it as a texture.
       visible: !trayIconRoot.symbolic
       layer.enabled: trayIconRoot.symbolic
@@ -844,6 +847,7 @@ BarWidget {
       width: Style.space(12)
       height: Style.space(12)
       icon: trayItemRoot.modelData.icon
+      applicationIcon: TrayModel.applicationIcon(trayItemRoot.modelData)
     }
 
     MouseArea {
